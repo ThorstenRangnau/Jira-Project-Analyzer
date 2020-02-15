@@ -12,12 +12,249 @@ TODOs:
 
 1. Receive all issues from jira for project:
 
-2. Parse all issues for issue indicator: Issue title: Prefix - number - description
+2. Parse all issues and track comment metrics
 
-3. Use these information to filter all pr and commit title/messages for prefix and number
-
-4. map jira issues with git prs and commits
+3. Store all information in a csv file
 '''
+
+APACHE_JAVA_PROJECTS = [
+    ".NET Ant Library",
+    "Abdera",
+    "Accumulo",
+    "ACE",
+    "ActiveMQ",
+    "Airavata",
+    "Ambari",
+    "Anakia",
+    "Ant",
+    "AntUnit",
+    "Any23",
+    "Apex",
+    "Archiva",
+    "Aries",
+    "Avro",
+    "Axiom",
+    "Axis2",
+    "Beam",
+    "Beehive",
+    "Bigtop",
+    "BookKeeper",
+    "Brooklyn",
+    "BVal",
+    "Calcite",
+    "Camel",
+    "CarbonData",
+    "Cassandra",
+    "Cayenne",
+    "Chainsaw",
+    "Chemistry",
+    "Chukwa",
+    "Clerezza",
+    "Click",
+    "CloudStack",
+    "Cocoon",
+    "Commons BCEL",
+    "Commons BeanUtils",
+    "Commons BSF",
+    "Commons Chain",
+    "Commons CLI",
+    "Commons Codec",
+    "Commons Collections",
+    "Commons Compress",
+    "Commons Configuration",
+    "Commons Daemon",
+    "Commons DBCP",
+    "Commons DbUtils",
+    "Commons Digester",
+    "Commons Discovery",
+    "Commons EL",
+    "Commons Email",
+    "Commons Exec",
+    "Commons FileUpload",
+    "Commons Functor",
+    "Commons HttpClient",
+    "Commons IO",
+    "Commons JCI",
+    "Commons JCS",
+    "Commons Jelly",
+    "Commons JEXL",
+    "Commons JXPath",
+    "Commons Lang",
+    "Commons Launcher",
+    "Commons Logging",
+    "Commons Math",
+    "Commons Modeler",
+    "Commons Net",
+    "Commons OGNL",
+    "Commons Pool",
+    "Commons Proxy",
+    "Commons RNG",
+    "Commons SCXML",
+    "Commons Validator",
+    "Commons VFS",
+    "Commons Weaver",
+    "Compress Ant Library",
+    "Continuum",
+    "Cordova",
+    "Crunch",
+    "cTAKES",
+    "Curator",
+"CXF",
+"Daffodil",
+"DataFu",
+"DeltaSpike",
+"Derby",
+"DeviceMap",
+"DirectMemory",
+"Directory",
+"Directory Server",
+"Directory Studio",
+"Drill",
+"ECS",
+"Edgent",
+"Empire - db",
+"Etch",
+"Excalibur",
+"Falcon",
+"Felix",
+"Flink",
+"Flume",
+"Fluo",
+"Fluo Recipes",
+"Fluo YARN",
+"FOP",
+"Forrest",
+"Fortress",
+"FreeMarker",
+"FtpServer",
+"Geronimo",
+"Giraph",
+"Gora",
+"Groovy",
+"Guacamole",
+"Hama",
+"Harmony",
+"HBase",
+"Helix",
+"Hive",
+"Hivemind",
+"HttpComponents Client",
+"HttpComponents Core",
+"Hudi",
+"Ignite",
+"Isis",
+"Ivy",
+"IvyDE",
+"Jackrabbit",
+"Jakarta Cactus",
+"JAMES",
+"jclouds",
+"Jena",
+"JMeter",
+"JSPWiki",
+"Karaf",
+"Kerby",
+"Knox",
+"Lens",
+"Lenya",
+"Log4j 2",
+"Lucene Core",
+"Mahout",
+"ManifoldCF",
+"Marmotta",
+"Maven",
+"Maven Doxia",
+"MetaModel",
+"MINA",
+"MRUnit",
+"MyFaces",
+"Nutch",
+"ODE",
+"OFBiz",
+"Olingo",
+"Oltu - Parent"
+"OODT",
+"Oozie",
+"OpenJPA",
+"OpenMeetings",
+"OpenNLP",
+"OpenWebBeans",
+"ORC",
+"ORO",
+"Parquet",
+"PDFBox",
+"Phoenix",
+"Pig",
+"Pivot",
+"PLC4X",
+"POI",
+"Polygene",
+"Portals",
+"Props Ant Library",
+"Qpid",
+"Rat",
+"REEF",
+"Regexp",
+"River",
+"Roller",
+"Sandesha2",
+"Santuario",
+"Scout",
+"ServiceMix",
+"Shale",
+"Shindig",
+"Shiro",
+"Sling",
+"Solr",
+"Spark",
+"Spatial Information System",
+"Sqoop",
+"SSHD",
+"Stanbol",
+"Storm",
+"Stratos",
+"Struts",
+"Synapse",
+"Syncope",
+"Tajo",
+"Tapestry",
+"Taverna",
+"Tentacles",
+"Texen",
+"Tez",
+"Thrift",
+"Tika",
+"Tiles",
+"Tobago",
+"Tomcat",
+"TomEE",
+"Torque",
+"Turbine",
+"Tuscany",
+"UIMA",
+"Velocity",
+"Velocity DVSL",
+"Velocity Tools",
+"VSS Ant Library",
+"VXQuery",
+"Vysper",
+"Whirr",
+"Whisker",
+"Wicket",
+"Wink",
+"Woden",
+"Wookie",
+"Xalan",
+"Xerces",
+"Xindice",
+"XML Commons External",
+"XML Commons Resolver",
+"XML Graphics Commons",
+"XMLBeans",
+"Yetus",
+"Zeppelin",
+"ZooKeeper"
+]
 
 
 def parse_args():
@@ -48,27 +285,23 @@ def parse_github(repository_title, prefix):
     return False
 
 
-def parse_jira(project_name):
+def parse_apache_jira_projects():
     jira = JIRA('https://issues.apache.org/jira/')
     projects = jira.projects()
-    project = None
     for p in projects:
-        if p.name == project_name:
-            project = p
-    if project is None:
-        print("No such project %s" % project_name)
-        return
-    issues = jira.search_issues("project = %s" % project.name, maxResults=1)
-    for issue in issues:
-        issue_name = issue.key
-    issue_prefix = re.sub("\d+", "", issue_name)
-    issue_prefix = re.sub("-", "", issue_prefix)
-    return issue_prefix
+        # issues = jira.search_issues("project = %s" % p.name, maxResults=1)
+        print(p.name)
+        # print(issues.total)
+    # i = 0
+    # for issue in issues:
+    #     i += 1
+    #     issue_name = issue.key
+    # issue_prefix = re.sub("\d+", "", issue_name)
+    # issue_prefix = re.sub("-", "", issue_prefix)
+    # print(i)
+    return None
 
 
 if __name__ == "__main__":
     args = parse_args()
-    jira_issue_prefix = parse_jira(args.jiraproject)
-    print("Issue prefix is %s" % jira_issue_prefix)
-    repo_has_prefix = parse_github(args.gitrepo, jira_issue_prefix)
-    print("%s" % "Repo has prefix!" if repo_has_prefix else "Repo has not prefix!")
+    jira_issue_metrics = parse_apache_jira_projects()

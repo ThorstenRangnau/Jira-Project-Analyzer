@@ -100,7 +100,7 @@ def create_project_spreadsheet(project_name, issues, comments_for_issue):
         else:
             ws.append([None, None, None, NO_COMMENTS, NO_COMMENTS])
             area += 1
-    tab = Table(displayName=project_name, ref="A4:E%d" % (20 + area))
+    tab = Table(displayName=re.sub(" ", "", project_name), ref="A4:E%d" % (20 + area))
     style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,
                            showLastColumn=False, showRowStripes=True, showColumnStripes=True)
     tab.tableStyleInfo = style
@@ -111,6 +111,8 @@ def create_project_spreadsheet(project_name, issues, comments_for_issue):
 
 
 def add_row_to_metrics_csv(name, jira_project_metric):
+    metric_path = "/issue-metrics/apache-project-issue-metrics.csv"
+    path_to_metrics = get_absolute_path(metric_path)
     with open(path_to_metrics, 'a', newline='') as file:
         writer = csv.writer(file)
         metrics = jira_project_metric.metrics()
@@ -167,7 +169,7 @@ def parse_apache_jira_projects():
         issue_name = all_issues[0].key
         issue_prefix = re.sub("\d+", "", issue_name)
         issue_prefix = re.sub("-", "", issue_prefix)
-        add_row_to_metrics_csv(JiraProject(java_project.name, issue_prefix, total, comments_issue))
+        add_row_to_metrics_csv(java_project.name, JiraProject(java_project.name, issue_prefix, total, comments_issue))
         metrics[java_project.name] = JiraProject(java_project.name, issue_prefix, total, comments_issue)
     # i = 0
     # for issue in issues:
@@ -188,5 +190,3 @@ def parse_apache_jira_projects():
 if __name__ == "__main__":
     args = parse_args()
     jira_issue_metrics = parse_apache_jira_projects()
-    metric_path = "/issue-metrics/apache-project-issue-metrics.csv"
-    path_to_metrics = get_absolute_path(metric_path)

@@ -123,26 +123,26 @@ APACHE_JAVA_PROJECTS = [
     # "Harmony",
 
 
-    # "HBase",
+    # "HBase", -- not able to load after running 5 hours only on this project
 
 
-    "Helix",
-    "Hive",
-    "Hivemind",
-    "HttpComponents Client",
-    "HttpComponents Core",
-    "Hudi",
-    "Ignite",
-    "Isis",
-    "Ivy",
-    "IvyDE",
-    "Jackrabbit",
-    "Jakarta Cactus",
-    "JAMES",
-    "jclouds",
-    "Jena",
-    "JMeter",
-    "JSPWiki"
+    # "Helix",
+    # "Hive",
+    # "Hivemind",
+    # "HttpComponents Client",
+    # "HttpComponents Core",
+    # "Hudi",
+    # "Ignite",
+    # "Isis",
+    # "Ivy",
+    # "IvyDE",
+    # "Jackrabbit",
+    # "Jakarta Cactus",
+    # "JAMES",
+    # "jclouds",
+    # "Jena",
+    # "JMeter",
+    # "JSPWiki"
 
     # "Karaf",
     # "Kerby",
@@ -150,15 +150,18 @@ APACHE_JAVA_PROJECTS = [
     # "Lens",
     # "Lenya",
     # "Log4j 2",
-    # "Lucene Core",
+    # "Lucene Core"
+
     # "Mahout",
     # "ManifoldCF",
     # "Marmotta",
-    # "Maven",
+    # "Maven"
+
     # "Maven Doxia",
     # "MetaModel",
     # "MINA",
-    # "MRUnit",
+    # "MRUnit"
+
     # "MyFaces",
     # "Nutch",
     # "ODE",
@@ -168,11 +171,14 @@ APACHE_JAVA_PROJECTS = [
     # "OODT",
     # "Oozie",
     # "OpenJPA",
+
+
     # "OpenMeetings",
     # "OpenNLP",
     # "OpenWebBeans",
     # "ORC",
     # "ORO",
+
     # "Parquet",
     # "PDFBox",
     # "Phoenix",
@@ -182,7 +188,8 @@ APACHE_JAVA_PROJECTS = [
     # "POI",
     # "Polygene",
     # "Portals",
-    # "Props Ant Library",
+    # "Props Ant Library"
+
     # "Qpid",
     # "Rat",
     # "REEF",
@@ -197,18 +204,25 @@ APACHE_JAVA_PROJECTS = [
     # "Shindig",
     # "Shiro",
     # "Sling",
-    # "Solr",
+
+
+    # "Solr" -- Failed loading
+    #
     # "Spark",
     # "Spatial Information System",
     # "Sqoop",
     # "SSHD",
-    # "Stanbol",
+    # "Stanbol"
+    #
     # "Storm",
     # "Stratos",
-    # "Struts",
-    # "Synapse",
-    # "Syncope",
-    # "Tajo",
+    # "Struts"
+
+
+    "Synapse",
+    "Syncope",
+    "Tajo"
+
     # "Tapestry",
     # "Taverna",
     # "Tentacles",

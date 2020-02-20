@@ -7,6 +7,7 @@ from github import Github
 from jira import JIRA, JIRAError
 from openpyxl import Workbook
 from openpyxl.worksheet.table import Table, TableStyleInfo
+from openpyxl.utils.exceptions import IllegalCharacterError
 from datetime import datetime
 
 from utils.spinner import Spinner
@@ -95,7 +96,12 @@ def create_project_spreadsheet(project_name, issues, comments_for_issue):
         comments = comments_for_issue[issue.key]
         if len(comments) > 0:
             for comment in comments:
-                ws.append([None, None, None, comment.id, re.sub("(.{95})", "\\1\n", comment.body, 0, re.DOTALL)])
+                try:
+                    ws.append([None, None, None, comment.id, re.sub("(.{95})", "\\1\n", comment.body, 0, re.DOTALL)])
+                except IllegalCharacterError:
+                    ws.append([None, None, None, comment.id, "Error in adding comment"])
+                    print("Was not able to print comment body:")
+                    print(comment.body)
                 area += 1
         else:
             ws.append([None, None, None, NO_COMMENTS, NO_COMMENTS])
@@ -118,6 +124,7 @@ def add_row_to_metrics_csv(name, jira_project_metric):
         metrics = jira_project_metric.metrics()
         writer.writerow([name,
                          jira_project_metric.prefix,
+                         jira_project_metric.num_issues,
                          metrics["total"],
                          metrics["average"],
                          metrics["commented_issues"],
@@ -128,7 +135,8 @@ def add_row_to_metrics_csv(name, jira_project_metric):
 
 
 def parse_apache_jira_projects():
-    jira = JIRA(APACHE_JIRA_SERVER)
+    # jira = JIRA(APACHE_JIRA_SERVER)
+    jira = JIRA(APACHE_JIRA_SERVER, basic_auth=('ThorstenRangnau', 'IamStudying2019'))
     projects = jira.projects()
     java_projects = list()
     for p in projects:
@@ -165,6 +173,7 @@ def parse_apache_jira_projects():
                     comments_issue[issue.key] = len(comments)
                 except JIRAError:
                     return
+                # TODO: how to handle requests.exceptions.ConnectionError ???
         create_project_spreadsheet(java_project.name, issues, comments_by_issue)
         issue_name = all_issues[0].key
         issue_prefix = re.sub("\d+", "", issue_name)

@@ -166,7 +166,9 @@ def parse_apache_jira_projects():
         # Load all comments for each issue
         print("Load comments for issues of project %s!" % java_project)
         with Spinner():
+            i = 1
             for issue in all_issues:
+                print("Load comments for issue %d out of %d issues" % (i, total))
                 try:
                     comments = jira.comments(issue)
                     comments_by_issue[issue.key] = comments
@@ -174,6 +176,7 @@ def parse_apache_jira_projects():
                 except JIRAError:
                     return
                 # TODO: how to handle requests.exceptions.ConnectionError ???
+                i += 1
         create_project_spreadsheet(java_project.name, issues, comments_by_issue)
         issue_name = all_issues[0].key
         issue_prefix = re.sub("\d+", "", issue_name)

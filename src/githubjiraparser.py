@@ -71,7 +71,13 @@ def get_absolute_path(rel_path):
 def create_project_spreadsheet(project_name, issues, comments_for_issue):
     wb = Workbook()
     ws = wb.active
-    ws.title = project_name
+    project_name = re.sub(" ", "-", project_name)
+    project_name = re.sub("/", "", project_name)
+    # ValueError: Invalid character / found in sheet title
+    try:
+        ws.title = project_name
+    except ValueError:
+        print("Could not add title for %s" % project_name)
     # set the width of the particular columns in order to provide convenient reading
     # First 3 columns are for issue id, key and summary
     ws.column_dimensions['A'].width = 15
@@ -140,6 +146,7 @@ def parse_apache_jira_projects():
     projects = jira.projects()
     java_projects = list()
     for p in projects:
+        # print(p.name)
         if p.name in APACHE_JAVA_PROJECTS:
             java_projects.append(p)
     metrics = dict()
@@ -147,42 +154,44 @@ def parse_apache_jira_projects():
         # Load all issues for a given java project
         issues = jira.search_issues("project = \"%s\"" % java_project.name, maxResults=1)
         total_issues = total = issues.total
-        all_issues = list()
-        start = 0
-        print("Start loading %d issues for project %s" % (total_issues, java_project.name))
-        while total_issues > 0:
-            print("**** LOADING: Issue %d - %d" % (start, start + 999 if start + 999 < total else total))
-            with Spinner():
-                try:
-                    issues = jira.search_issues("project = \"%s\"" % java_project.name, startAt=start, maxResults=1000)
-                except JIRAError:
-                    return
-            all_issues.extend(issues)
-            start += 1000
-            total_issues -= 1000
-        print("Project %s  has %d total issues" % (java_project.name, issues.total))
-        comments_issue = dict()
-        comments_by_issue = dict()
-        # Load all comments for each issue
-        print("Load comments for issues of project %s!" % java_project)
-        with Spinner():
-            i = 1
-            for issue in all_issues:
-                print("Load comments for issue %d out of %d issues" % (i, total))
-                try:
-                    comments = jira.comments(issue)
-                    comments_by_issue[issue.key] = comments
-                    comments_issue[issue.key] = len(comments)
-                except JIRAError:
-                    return
-                # TODO: how to handle requests.exceptions.ConnectionError ???
-                i += 1
-        create_project_spreadsheet(java_project.name, issues, comments_by_issue)
-        issue_name = all_issues[0].key
-        issue_prefix = re.sub("\d+", "", issue_name)
-        issue_prefix = re.sub("-", "", issue_prefix)
-        add_row_to_metrics_csv(java_project.name, JiraProject(java_project.name, issue_prefix, total, comments_issue))
-        metrics[java_project.name] = JiraProject(java_project.name, issue_prefix, total, comments_issue)
+        print("%d issues for %s" % (total, java_project.name))
+        # all_issues = list()
+        # start = 0
+        # print("Start loading %d issues for project %s" % (total_issues, java_project.name))
+        # while total_issues > 0:
+        #     print("**** LOADING: Issue %d - %d" % (start, start + 999 if start + 999 < total else total))
+        #     with Spinner():
+        #         try:
+        #             issues = jira.search_issues("project = \"%s\"" % java_project.name, startAt=start, maxResults=1000)
+        #         except JIRAError:
+        #             return
+        #     all_issues.extend(issues)
+        #     start += 1000
+        #     total_issues -= 1000
+        # print("Project %s  has %d total issues" % (java_project.name, issues.total))
+        # comments_issue = dict()
+        # comments_by_issue = dict()
+        # # Load all comments for each issue
+        # print("Load comments for issues of project %s!" % java_project)
+        # with Spinner():
+        #     i = 1
+        #     for issue in all_issues:
+        #         try:
+        #             comments = jira.comments(issue)
+        #             comments_by_issue[issue.key] = comments
+        #             comments_issue[issue.key] = len(comments)
+        #         except JIRAError:
+        #             return
+        #         # TODO: how to handle requests.exceptions.ConnectionError ???
+        #         if i % 500 == 0:
+        #             print("Load comments for issue %d out of %d issues" % (i, total))
+        #         i += 1
+        # # create_project_spreadsheet(java_project.name, issues, comments_by_issue)
+        # issue_name = all_issues[0].key
+        # issue_prefix = re.sub("\d+", "", issue_name)
+        # issue_prefix = re.sub("-", "", issue_prefix)
+        # add_row_to_metrics_csv(java_project.name, JiraProject(java_project.name, issue_prefix, total, comments_issue))
+        # metrics[java_project.name] = JiraProject(java_project.name, issue_prefix, total, comments_issue)
     # i = 0
     # for issue in issues:
     #     i += 1

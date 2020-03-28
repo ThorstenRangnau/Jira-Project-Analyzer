@@ -1,7 +1,0 @@
-Dependency Management
----------------------
-Project                      ,Categories by Apache                                                                                                                              ,Category by studying documentation              ,Source                                                                     ,Reasoning
-Ivy                          ,build-management                                                                                                                                  ,dependency management                           ,                                                                           ,
-IvyDE                        ,build-management                                                                                                                                  ,                                                ,                                                                           ,
-Maven                        ,build-management                                                                                                                                  ,                                                ,                                                                           ,
-Maven Doxia                  ,build-management                                                                                                                                  ,                                                ,                                                                           ,

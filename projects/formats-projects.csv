@@ -1,6 +1,0 @@
-Formats
--------
-Project                      ,Categories by Apache                                                                                                                              ,Category by studying documentation              ,Source                                                                     ,Reasoning
-CarbonData                   ,big-data                                                                                                                                          ,data format                                     ,https://carbondata.apache.org/                                             ,Apache CarbonData is an indexed columnar data format for fast analytics on big data platform
-ORC                          ," Big-data,  database,  hadoop,  library"                                                                                                         ,file format                                     ,https://orc.apache.org/                                                    ,
-Parquet                      ,big-data                                                                                                                                          ,storage format                                  ,http://parquet.apache.org/                                                 ,

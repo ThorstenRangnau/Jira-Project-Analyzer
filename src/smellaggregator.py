@@ -1,4 +1,5 @@
 import argparse
+import csv
 
 
 # The aim of this script is to detect first appearance of a smell in the ASTracker output. Then it should extract the
@@ -20,7 +21,28 @@ def parse_args():
     return parser.parse_args()
 
 
+class ArchitecturalSmell(object):
+
+    def __init__(self, unique_smell_id, birth_version):
+        self.unique_smell_id = unique_smell_id
+        self.birth_version = birth_version
+
+
+def read_architectural_smells(input_file):
+    architectural_smells = dict()
+    with open(input_file, mode="r") as csv_file:
+        for row in csv.DictReader(csv_file):
+            unique_smell_id = row["uniqueSmellID"]
+            if unique_smell_id not in architectural_smells:
+                birth_version = row["firstAppeared"]
+                # does not exist yet and hence need to be created!
+                smell = ArchitecturalSmell(unique_smell_id, birth_version)
+                architectural_smells[unique_smell_id] = smell
+    return architectural_smells
+
+
 if __name__ == "__main__":
     args = parse_args()
-    print(args.input_file)
+    smells = read_architectural_smells(args.input_file)
+    print("We extracted %d smells" % len(smells))
     print(args.output_directory)

@@ -70,6 +70,19 @@ commit.commit.message
 commit = repo.get_git_commit("014a5a1b5c8f2908b200d27d4380713ec331645b")
 commit.message --> PDFBOX-4757: activate most of the tests\n\ngit-svn-id: https://svn.apache.org/repos/asf/pdfbox/trunk@1873371 13f79535-47bb-0310-9956-ffa450edef68'
 github.GithubException.GithubException:
+
+1. have a wrapper for Github with new credentials and request counter
+
+2. have a method for making the request to github
+
+3. change Github instances when rate limit is reached
+
+4. write every entry and ensure that csv is created even if requests are failing
+
+5. in case no github instance has requests left write rest of the data to another csv
+
+6 optional: in case commits are too much to parse with the github instances --> await user input for writing or splitting ...
+
 '''
 
 

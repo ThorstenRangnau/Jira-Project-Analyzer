@@ -11,6 +11,8 @@
 
 # 22.2K LOC
 
+# TODO: Maybe copying also the files to the node to increase speed ???
+
 echo Load modules ...
 ml load OpenJDK/11.0.2
 

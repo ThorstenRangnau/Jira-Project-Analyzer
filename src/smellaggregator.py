@@ -1,5 +1,10 @@
 import argparse
 import csv
+from github import Github, GithubException
+
+NO_COMMENTS_URL = "No comments url"
+NO_COMMIT_MESSAGE = "No commit message"
+NO_ISSUE_KEY = "No issue key"
 
 
 # The aim of this script is to detect first appearance of a smell in the ASTracker output. Then it should extract the
@@ -21,19 +26,23 @@ def parse_args():
     parser.add_argument(
         "-p", dest="only_package", required=False, default=False, action="store_true",
         help="Considers only package level architectural smells!")
+    parser.add_argument(
+        "-g", dest="github_repository_name", required=True,
+        help="Name of the GitHub Repository")
     return parser.parse_args()
 
 
 class ArchitecturalSmell(object):
 
-    def __init__(self, unique_smell_id, birth_version, affected_components):
+    def __init__(self, unique_smell_id, smell_type, birth_version, affected_components):
         self.unique_smell_id = unique_smell_id
+        self.smell_type = smell_type
         self.birth_version = birth_version
         self.affected_components = affected_components
 
 
 def extract_architectural_smell(row):
-    return ArchitecturalSmell(row["uniqueSmellID"], row["firstAppeared"], row["affectedElements"])
+    return ArchitecturalSmell(row["uniqueSmellID"], row["smellType"], row["firstAppeared"], row["affectedElements"])
 
 
 def read_architectural_smells(input_file, only_package):
@@ -52,8 +61,45 @@ def read_architectural_smells(input_file, only_package):
     return architectural_smells
 
 
+'''
+g = Github()
+g.get_repo("apache/pdfbox")
+commit = repo.get_commit(commit_sha)
+commit.commetns_url
+commit.commit.message
+commit = repo.get_git_commit("014a5a1b5c8f2908b200d27d4380713ec331645b")
+commit.message --> PDFBOX-4757: activate most of the tests\n\ngit-svn-id: https://svn.apache.org/repos/asf/pdfbox/trunk@1873371 13f79535-47bb-0310-9956-ffa450edef68'
+github.GithubException.GithubException:
+'''
+
+
+def map_version_issue(birth_versions, output_directory, github_repository_name):
+    g = Github("ThorstenRangnau", "IamStudying2019")
+    repo = g.get_repo(github_repository_name)
+    with open('%s/version_issue.csv' % output_directory, mode='w') as csv_file:
+        fieldnames = ['commit_sha', 'issue_key', 'commit_message', 'commit_comments_url']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for commit_sha in birth_versions:
+            try:
+                commit = repo.get_commit(commit_sha)
+            except GithubException:
+                commit = None
+            commit_message = commit.commit.message if commit is not None else NO_ISSUE_KEY
+            issue_key = commit_message.split(":", 1)[0]
+            writer.writerow({
+                'commit_sha': commit_sha,
+                'issue_key': issue_key,
+                'commit_message': commit.commit.message if commit is not None else NO_COMMIT_MESSAGE,
+                'commit_comments_url': commit.comments_url if commit is not None else NO_COMMENTS_URL
+            })
+
+
 if __name__ == "__main__":
     args = parse_args()
     smells = read_architectural_smells(args.input_file, args.only_package)
-    print("We extracted %d smells" % len(smells))
+    print("We extracted %d commits " % len(smells))
+    map_version_issue([*smells], args.output_directory, args.github_repository_name)
     print(args.output_directory)
+
+# python smellaggregator.py -i /Users/trangnau/RUG/master-thesis/Jira-Project-Analyzer/output/trackASOutput/antlr/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p

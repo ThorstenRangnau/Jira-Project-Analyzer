@@ -1,6 +1,7 @@
 import argparse
 import csv
 from github import Github, GithubException
+from github_service.github_commit_service import GitHubCommitService
 
 NO_COMMENTS_URL = "No comments url"
 NO_COMMIT_MESSAGE = "No commit message"
@@ -81,21 +82,22 @@ github.GithubException.GithubException:
 
 5. in case no github instance has requests left write rest of the data to another csv
 
-6 optional: in case commits are too much to parse with the github instances --> await user input for writing or splitting ...
+6. optional: in case commits are too much to parse with the github instances --> await user input for writing or splitting ...
+
+7. cleanup code
 
 '''
 
 
 def map_version_issue(birth_versions, output_directory, github_repository_name):
-    g = Github("ThorstenRangnau", "IamStudying2019")
-    repo = g.get_repo(github_repository_name)
+    github_commit_service = GitHubCommitService(github_repository_name)
     with open('%s/version_issue.csv' % output_directory, mode='w') as csv_file:
         fieldnames = ['commit_sha', 'issue_key', 'commit_message', 'commit_comments_url']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         for commit_sha in birth_versions:
             try:
-                commit = repo.get_commit(commit_sha)
+                commit = github_commit_service.get_commit(commit_sha)
             except GithubException:
                 commit = None
             commit_message = commit.commit.message if commit is not None else NO_ISSUE_KEY
@@ -115,4 +117,4 @@ if __name__ == "__main__":
     map_version_issue([*smells], args.output_directory, args.github_repository_name)
     print(args.output_directory)
 
-# python smellaggregator.py -i /Users/trangnau/RUG/master-thesis/Jira-Project-Analyzer/output/trackASOutput/antlr/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p
+# python smellaggregator.py -i /Users/trangnau/RUG/master-thesis/Jira-Project-Analyzer/output/trackASOutput/antlr/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/pdfbox

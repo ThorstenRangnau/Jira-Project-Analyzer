@@ -2,11 +2,11 @@
 #SBATCH --time=6-00:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=24
-#SBATCH --job-name=astracker_derby
+#SBATCH --job-name=astracker_tajo
 #SBATCH --mem=64GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=t.rangnau@student.rug.nl
-#SBATCH --output=job-%j-astracker-derby.log
+#SBATCH --output=job-%j-astracker-tajo.log
 #SBATCH --partition=regular
 
 # 22.2K LOC
@@ -41,4 +41,4 @@ chmod +rwx $TMPDIR/maven-status/
 
 echo Start program ...
 
-java -Xms24g -Xmx48g -jar $TMPDIR/astracker-0.9.0-jar-with-dependencies.jar -i /data/s3570282/results/derby_arcan_analysis/ -p derby -o /data/s3570282/results/derby_astracker_analysis/ -pC
+java -Xms24g -Xmx48g -jar $TMPDIR/astracker-0.9.0-jar-with-dependencies.jar -i /data/s3570282/results/tajo_arcan_analysis/ -p tajo -o /data/s3570282/results/tajo_astracker_analysis/ -pC

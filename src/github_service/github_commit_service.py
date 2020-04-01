@@ -58,6 +58,8 @@ class GitHubCommitService:
         if self.current_instance_id + 1 == len(self.github_instances):
             # we are already pointing to the last instance
             has_further_instances = False
+        # not really necessary to check for rate limit again because we never reach this part when
+        # rate limit is not exceeded but you never know and it won't hurt!
         if self.github_instances[self.current_instance_id].exceed_rate_limit and has_further_instances:
             print("****** NOTE: We have to change to next instance due to rate limit! ****** ")
             self.current_instance_id += 1

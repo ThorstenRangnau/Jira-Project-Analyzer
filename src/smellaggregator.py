@@ -30,6 +30,9 @@ def parse_args():
     parser.add_argument(
         "-g", dest="github_repository_name", required=True,
         help="Name of the GitHub Repository")
+    parser.add_argument(
+        "-k", dest="issue_prefix", required=True,
+        help="Jira Issue key prefix!")
     return parser.parse_args()
 
 
@@ -40,6 +43,7 @@ class ArchitecturalSmell(object):
         self.smell_type = smell_type
         self.birth_version = birth_version
         self.affected_components = affected_components
+        self.issue_key = None
 
 
 def extract_architectural_smell(row):
@@ -91,9 +95,23 @@ github.GithubException.GithubException:
 '''
 
 
-def map_version_issue(smell_dict, output_directory, github_repository_name):
+def has_numbers(input_string):
+    return any(char.isdigit() for char in input_string)
+
+
+def extract_commit_information(commit, prefix):
+    # TODO: What to do and how to detect whether there are two issue keys in a commit message?
+    commit_message = commit.commit.message if commit is not None else NO_COMMIT_MESSAGE
+    issue_key = commit_message.split(":", 1)[0]
+    if not has_numbers(issue_key) or prefix.casefold() not in issue_key.casefold():
+        issue_key = NO_ISSUE_KEY
+    commit_url = commit.comments_url if commit is not None else NO_COMMENTS_URL
+    return issue_key, commit_message, commit_url
+
+
+def map_version_issue(smell_dict, output_directory, github_repository_name, prefix):
     github_commit_service = GitHubCommitService(github_repository_name)
-    with open('%s/version_issue.csv' % output_directory, mode='w') as csv_file:
+    with open('%s/version_issue_%s.csv' % (output_directory, prefix), mode='w') as csv_file:
         fieldnames = ['commit_sha', 'issue_key', 'commit_message', 'commit_comments_url']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
@@ -106,13 +124,12 @@ def map_version_issue(smell_dict, output_directory, github_repository_name):
                 print("Stop programme because of GitHubCommitServiceException!")
                 print(e.message)
                 return
-            commit_message = commit.commit.message if commit is not None else NO_ISSUE_KEY
-            issue_key = commit_message.split(":", 1)[0]
+            issue_key, commit_message, comment_url = extract_commit_information(commit, prefix)
             writer.writerow({
                 'commit_sha': commit_sha,
                 'issue_key': issue_key,
-                'commit_message': commit.commit.message if commit is not None else NO_COMMIT_MESSAGE,
-                'commit_comments_url': commit.comments_url if commit is not None else NO_COMMENTS_URL
+                'commit_message': commit_message,
+                'commit_comments_url': comment_url
             })
 
 
@@ -130,9 +147,10 @@ if __name__ == "__main__":
     skip_step = evaluate_input()
     if not skip_step:
         print("Start extracting Issue keys form GitHub repository! Results are stored to disk!")
-        map_version_issue(smells, args.output_directory, args.github_repository_name)
+        map_version_issue(smells, args.output_directory, args.github_repository_name, args.issue_prefix)
     else:
         print("Skip extracting Issue keys from GitHub repository!")
     print(args.output_directory)
 
-# python smellaggregator.py -i /Users/trangnau/RUG/master-thesis/Jira-Project-Analyzer/output/trackASOutput/antlr/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/pdfbox
+# python smellaggregator.py -i /Users/trangnau/RUG/master-thesis/Jira-Project-Analyzer/output/trackASOutput/antlr/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/pdfbox -k PDFBOX
+# python smellaggregator.py -i /Users/trangnau/Downloads/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/derby -k DERBY

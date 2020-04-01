@@ -72,13 +72,13 @@ commit = repo.get_git_commit("014a5a1b5c8f2908b200d27d4380713ec331645b")
 commit.message --> PDFBOX-4757: activate most of the tests\n\ngit-svn-id: https://svn.apache.org/repos/asf/pdfbox/trunk@1873371 13f79535-47bb-0310-9956-ffa450edef68'
 github.GithubException.GithubException:
 
-1. have a wrapper for Github with new credentials and request counter
+1. have a wrapper for Github with new credentials and request counter - checked
 
-2. have a method for making the request to github
+2. have a method for making the request to github - checked
 
-3. change Github instances when rate limit is reached
+3. change Github instances when rate limit is reached  - checked
 
-4. write every entry and ensure that csv is created even if requests are failing
+4. write every entry and ensure that csv is created even if requests are failing - kinda checked
 
 5. in case no github instance has requests left write rest of the data to another csv
 
@@ -86,16 +86,18 @@ github.GithubException.GithubException:
 
 7. cleanup code
 
+
+
 '''
 
 
-def map_version_issue(birth_versions, output_directory, github_repository_name):
+def map_version_issue(smell_dict, output_directory, github_repository_name):
     github_commit_service = GitHubCommitService(github_repository_name)
     with open('%s/version_issue.csv' % output_directory, mode='w') as csv_file:
         fieldnames = ['commit_sha', 'issue_key', 'commit_message', 'commit_comments_url']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
-        for commit_sha in birth_versions:
+        for commit_sha in [*smell_dict]:
             try:
                 commit = github_commit_service.get_commit(commit_sha)
             except GithubException:
@@ -114,11 +116,23 @@ def map_version_issue(birth_versions, output_directory, github_repository_name):
             })
 
 
+def evaluate_input():
+    i = input("Do you want to continue ([y]es/[n]o): ")
+    if i == "yes" or i == "y":
+        return False
+    return True
+
+
 if __name__ == "__main__":
     args = parse_args()
     smells = read_architectural_smells(args.input_file, args.only_package)
     print("We extracted %d commits " % len(smells))
-    map_version_issue([*smells], args.output_directory, args.github_repository_name)
+    skip_step = evaluate_input()
+    if not skip_step:
+        print("Start extracting Issue keys form GitHub repository! Results are stored to disk!")
+        map_version_issue(smells, args.output_directory, args.github_repository_name)
+    else:
+        print("Skip extracting Issue keys from GitHub repository!")
     print(args.output_directory)
 
 # python smellaggregator.py -i /Users/trangnau/RUG/master-thesis/Jira-Project-Analyzer/output/trackASOutput/antlr/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/pdfbox

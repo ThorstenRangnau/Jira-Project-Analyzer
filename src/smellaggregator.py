@@ -1,7 +1,7 @@
 import argparse
 import csv
 from github import Github, GithubException
-from github_service.github_commit_service import GitHubCommitService
+from github_service.github_commit_service import GitHubCommitService, GitHubCommitServiceException
 
 NO_COMMENTS_URL = "No comments url"
 NO_COMMIT_MESSAGE = "No commit message"
@@ -100,6 +100,10 @@ def map_version_issue(birth_versions, output_directory, github_repository_name):
                 commit = github_commit_service.get_commit(commit_sha)
             except GithubException:
                 commit = None
+            except GitHubCommitServiceException as e:
+                print("Stop programme because of GitHubCommitServiceException!")
+                print(e.message)
+                return
             commit_message = commit.commit.message if commit is not None else NO_ISSUE_KEY
             issue_key = commit_message.split(":", 1)[0]
             writer.writerow({

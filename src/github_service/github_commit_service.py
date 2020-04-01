@@ -15,9 +15,8 @@ class GitHubInstance:
 
     def __init__(self, id, access_key, repo):
         self.id = id
-        # TODO: check whether githib instance is still required!!!
-        self.github_instance = Github(access_key)
-        self.repo = self.github_instance.get_repo(repo)
+        github_instance = Github(access_key)
+        self.repo = github_instance.get_repo(repo)
         self.requests = 1
 
     def get_commit(self, commit_sha):

@@ -4,10 +4,13 @@ import re
 
 from github import Github, GithubException
 from github_service.github_commit_service import GitHubCommitService, GitHubCommitServiceException
+from jira import JIRA, JIRAError
 
 NO_COMMENTS_URL = "No comments url"
 NO_COMMIT_MESSAGE = "No commit message"
 NO_ISSUE_KEY = "No issue key"
+
+APACHE_JIRA_SERVER = 'https://issues.apache.org/jira/'
 
 
 # The aim of this script is to detect first appearance of a smell in the ASTracker output. Then it should extract the
@@ -35,9 +38,6 @@ def parse_args():
     parser.add_argument(
         "-k", dest="issue_prefix", required=True,
         help="Jira Issue key prefix!")
-    parser.add_argument(
-        "-j", dest="jira_path", required=True,
-        help="Path to jira server!")
     return parser.parse_args()
 
 
@@ -72,26 +72,8 @@ def read_architectural_smells(input_file, only_package):
 
 
 '''
-g = Github()
-g.get_repo("apache/pdfbox")
-commit = repo.get_commit(commit_sha)
-commit.commetns_url
-commit.commit.message
-commit = repo.get_git_commit("014a5a1b5c8f2908b200d27d4380713ec331645b")
-commit.message --> PDFBOX-4757: activate most of the tests\n\ngit-svn-id: https://svn.apache.org/repos/asf/pdfbox/trunk@1873371 13f79535-47bb-0310-9956-ffa450edef68'
-github.GithubException.GithubException:
-
-1. have a wrapper for Github with new credentials and request counter - checked
-
-2. have a method for making the request to github - checked
-
-3. change Github instances when rate limit is reached  - checked
-
-4. write every entry and ensure that csv is created even if requests are failing - kinda checked
 
 5. in case no github instance has requests left write rest of the data to another csv
-
-6. optional: in case commits are too much to parse with the github instances --> await user input for writing - checked
 
 7. cleanup code
 
@@ -107,20 +89,8 @@ def has_numbers(input_string):
 
 
 def extract_commit_information(commit, prefix):
-    # TODO: What to do and how to detect whether there are two issue keys in a commit message?
     commit_message = commit.commit.message if commit is not None else NO_COMMIT_MESSAGE
     issue_keys = re.findall("%s-[0-9]+" % prefix, commit_message)
-    # num_issue_keys = len(issue_key)
-    # if num_issue_keys == 0:
-    #     issue_key = NO_ISSUE_KEY
-    # elif num_issue_keys == 1:
-    #     issue_key = issue_key[0]
-    # elif num_issue_keys == 2:
-    #     issue_key = "%s, %s" % (issue_key[0], issue_key[1])
-    # elif num_issue_keys == 3:
-    #     issue_key = "%s, %s, %s" % (issue_key[0], issue_key[1], issue_key[2])
-    # else:
-    #     issue_key = "%s, %s, %s, and more!" % (issue_key[0], issue_key[1], issue_key[2])
     commit_url = commit.comments_url if commit is not None else NO_COMMENTS_URL
     return set(issue_keys), commit_message, commit_url
 
@@ -186,8 +156,22 @@ def evaluate_input(step_description):
     return True
 
 
-def extract_issue_information(issue_keys, jira_path):
-    pass
+def extract_issue_information(issue_keys, output_directory, prefix):
+    # TODO: how long until issue was fixed/resolved
+    jira = JIRA(APACHE_JIRA_SERVER, basic_auth=('ThorstenRangnau', 'IamStudying2019'))
+    with open('%s/issue_with_type_%s.csv' % (output_directory, prefix.casefold()), mode='w') as csv_file:
+        fieldnames = ['issue_key',
+                      'issue_type']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for issue_key in issue_keys:
+            issue_list = jira.search_issues("id=\"%s\"" % issue_key)
+            issue = issue_list[0]
+            issue_type = issue.fields.issuetype if issue is not None else "No type"
+            writer.writerow({
+                'issue_key': issue_key,
+                'issue_type': issue_type
+            })
 
 
 if __name__ == "__main__":
@@ -200,13 +184,14 @@ if __name__ == "__main__":
         issues = map_version_issue(smells, args.output_directory, args.github_repository_name, args.issue_prefix)
     else:
         print("Skip extracting Issue keys from GitHub repository!")
+    print("We extracted %d issue keys" % len(issues))
     skip_step = evaluate_input("extracting issue information from Jira")
     if not skip_step and issues:
         print("Start extracting Issue information form Jira! Results are stored to disk!")
-        extract_issue_information(issues, args.jira_path)
+        extract_issue_information(issues, args.output_directory, args.issue_prefix)
     else:
         print("Skip extracting Issue information form Jira!")
-    print(args.output_directory)
+    print("Finish process!")
 
 # python smellaggregator.py -i /Users/trangnau/RUG/master-thesis/Jira-Project-Analyzer/output/trackASOutput/antlr/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/pdfbox -k PDFBOX
 # python smellaggregator.py -i /Users/trangnau/Downloads/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/derby -k DERBY

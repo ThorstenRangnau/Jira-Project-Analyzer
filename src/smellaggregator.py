@@ -57,6 +57,8 @@ def extract_architectural_smell(row):
 
 def read_architectural_smells(input_file, only_package):
     architectural_smells = dict()
+    unique_smell_ids = set()
+    cyclic = unstable = hub = 0
     with open(input_file, mode="r") as csv_file:
         for row in csv.DictReader(csv_file):
             # in order to minimize github api usage we store smells by birth version
@@ -64,10 +66,25 @@ def read_architectural_smells(input_file, only_package):
             if only_package and row["affectedComponentType"] == "class":
                 continue
             commit_id = row["firstAppeared"]
-            if commit_id not in architectural_smells:
-                architectural_smells[commit_id] = [extract_architectural_smell(row)]
-            else:
-                architectural_smells[commit_id].append(extract_architectural_smell(row))
+            unique_smell_id = row["uniqueSmellID"]
+            smell_type = row["smellType"]
+            if unique_smell_id not in unique_smell_ids:
+                unique_smell_ids.add(unique_smell_id)
+                if smell_type == "cyclicDep":
+                    cyclic += 1
+                if smell_type == "hubLikeDep":
+                    hub += 1
+                if smell_type == "unstableDep":
+                    unstable += 1
+                if commit_id not in architectural_smells:
+                    architectural_smells[commit_id] = [extract_architectural_smell(row)]
+                else:
+                    architectural_smells[commit_id].append(extract_architectural_smell(row))
+    print("We extracted %d smells (%d CD, %d UD, %d HD) in %d commits!" % (len(unique_smell_ids),
+                                                                         cyclic,
+                                                                         unstable,
+                                                                         hub,
+                                                                         len(architectural_smells)))
     return architectural_smells
 
 
@@ -130,6 +147,7 @@ def map_version_issue(smell_dict, output_directory, github_repository_name, pref
             issue_keys, commit_message, comment_url = extract_commit_information(commit, prefix)
             cyclic_dependencies = hub_like_dependencies = unstable_dependencies = 0
             for smell in smell_dict[commit_sha]:
+                smell.issue_key = issue_keys
                 if smell.smell_type == "cyclicDep":
                     cyclic_dependencies += 1
                 if smell.smell_type == "hubLikeDep":
@@ -145,8 +163,9 @@ def map_version_issue(smell_dict, output_directory, github_repository_name, pref
                     '#_unstable_dependencies': unstable_dependencies,
                     'commit_comments_url': comment_url
                 })
+
             all_issue_keys.update(issue_keys)
-    return all_issue_keys
+    return all_issue_keys, smell_dict
 
 
 def evaluate_input(step_description):
@@ -174,23 +193,43 @@ def extract_issue_information(issue_keys, output_directory, prefix):
             })
 
 
+def write_architectural_smells(architectural_smells, output_directory, issue_prefix):
+    with open('%s/architectural_smells_%s.csv' % (output_directory, issue_prefix.casefold()), mode='w') as csv_file:
+        fieldnames = ['unique_smell_id',
+                      'commit_sha',
+                      'issue_key',
+                      'smell_type',
+                      'affected_elements']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for commit_sha in architectural_smells:
+            for smell in architectural_smells[commit_sha]:
+                writer.writerow({
+                    'unique_smell_id': smell.unique_smell_id,
+                    'commit_sha': commit_sha,
+                    'issue_key': resolve_issue_keys(smell.issue_key),
+                    'smell_type': smell.smell_type,
+                    'affected_elements': smell.affected_components
+                })
+
+
 if __name__ == "__main__":
     args = parse_args()
     smells = read_architectural_smells(args.input_file, args.only_package)
-    print("We extracted %d commits " % len(smells))
     skip_step = evaluate_input("extracting issue keys from GitHub")
+    issues = None
     if not skip_step:
         print("Start extracting Issue keys form GitHub repository! Results are stored to disk!")
-        issues = map_version_issue(smells, args.output_directory, args.github_repository_name, args.issue_prefix)
+        issues, smells = map_version_issue(smells, args.output_directory, args.github_repository_name, args.issue_prefix)
     else:
         print("Skip extracting Issue keys from GitHub repository!")
-    print("We extracted %d issue keys" % len(issues))
     skip_step = evaluate_input("extracting issue information from Jira")
     if not skip_step and issues:
         print("Start extracting Issue information form Jira! Results are stored to disk!")
         extract_issue_information(issues, args.output_directory, args.issue_prefix)
     else:
         print("Skip extracting Issue information form Jira!")
+    write_architectural_smells(smells, args.output_directory, args.issue_prefix)
     print("Finish process!")
 
 # python smellaggregator.py -i /Users/trangnau/RUG/master-thesis/Jira-Project-Analyzer/output/trackASOutput/antlr/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/pdfbox -k PDFBOX

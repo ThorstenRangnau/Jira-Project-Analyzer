@@ -35,6 +35,9 @@ def parse_args():
     parser.add_argument(
         "-k", dest="issue_prefix", required=True,
         help="Jira Issue key prefix!")
+    parser.add_argument(
+        "-j", dest="jira_path", required=True,
+        help="Path to jira server!")
     return parser.parse_args()
 
 
@@ -134,6 +137,7 @@ def resolve_issue_keys(issue_keys):
 
 def map_version_issue(smell_dict, output_directory, github_repository_name, prefix):
     github_commit_service = GitHubCommitService(github_repository_name)
+    all_issue_keys = set()
     with open('%s/issue_for_commit_sha_in_%s.csv' % (output_directory, prefix.casefold()), mode='w') as csv_file:
         fieldnames = ['commit_sha',
                       'issue_key(s)',
@@ -171,25 +175,37 @@ def map_version_issue(smell_dict, output_directory, github_repository_name, pref
                     '#_unstable_dependencies': unstable_dependencies,
                     'commit_comments_url': comment_url
                 })
+            all_issue_keys.update(issue_keys)
+    return all_issue_keys
 
 
-def evaluate_input():
-    i = input("Do you want to continue ([y]es/[n]o): ")
+def evaluate_input(step_description):
+    i = input("Do you want to continue with %s ([y]es/[n]o): " % step_description)
     if i == "yes" or i == "y":
         return False
     return True
+
+
+def extract_issue_information(issue_keys, jira_path):
+    pass
 
 
 if __name__ == "__main__":
     args = parse_args()
     smells = read_architectural_smells(args.input_file, args.only_package)
     print("We extracted %d commits " % len(smells))
-    skip_step = evaluate_input()
+    skip_step = evaluate_input("extracting issue keys from GitHub")
     if not skip_step:
         print("Start extracting Issue keys form GitHub repository! Results are stored to disk!")
-        map_version_issue(smells, args.output_directory, args.github_repository_name, args.issue_prefix)
+        issues = map_version_issue(smells, args.output_directory, args.github_repository_name, args.issue_prefix)
     else:
         print("Skip extracting Issue keys from GitHub repository!")
+    skip_step = evaluate_input("extracting issue information from Jira")
+    if not skip_step and issues:
+        print("Start extracting Issue information form Jira! Results are stored to disk!")
+        extract_issue_information(issues, args.jira_path)
+    else:
+        print("Skip extracting Issue information form Jira!")
     print(args.output_directory)
 
 # python smellaggregator.py -i /Users/trangnau/RUG/master-thesis/Jira-Project-Analyzer/output/trackASOutput/antlr/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/pdfbox -k PDFBOX

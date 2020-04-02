@@ -1,5 +1,7 @@
 import argparse
 import csv
+import re
+
 from github import Github, GithubException
 from github_service.github_commit_service import GitHubCommitService, GitHubCommitServiceException
 
@@ -86,11 +88,13 @@ github.GithubException.GithubException:
 
 5. in case no github instance has requests left write rest of the data to another csv
 
-6. optional: in case commits are too much to parse with the github instances --> await user input for writing or splitting ...
+6. optional: in case commits are too much to parse with the github instances --> await user input for writing - checked
 
 7. cleanup code
 
+8. extract jira issues with type and stuff to store them in a csv
 
+9. add the issue keys to the smells and store them in a csv as well
 
 '''
 
@@ -102,17 +106,42 @@ def has_numbers(input_string):
 def extract_commit_information(commit, prefix):
     # TODO: What to do and how to detect whether there are two issue keys in a commit message?
     commit_message = commit.commit.message if commit is not None else NO_COMMIT_MESSAGE
-    issue_key = commit_message.split(":", 1)[0]
-    if not has_numbers(issue_key) or prefix.casefold() not in issue_key.casefold():
-        issue_key = NO_ISSUE_KEY
+    issue_keys = re.findall("%s-[0-9]+" % prefix, commit_message)
+    # num_issue_keys = len(issue_key)
+    # if num_issue_keys == 0:
+    #     issue_key = NO_ISSUE_KEY
+    # elif num_issue_keys == 1:
+    #     issue_key = issue_key[0]
+    # elif num_issue_keys == 2:
+    #     issue_key = "%s, %s" % (issue_key[0], issue_key[1])
+    # elif num_issue_keys == 3:
+    #     issue_key = "%s, %s, %s" % (issue_key[0], issue_key[1], issue_key[2])
+    # else:
+    #     issue_key = "%s, %s, %s, and more!" % (issue_key[0], issue_key[1], issue_key[2])
     commit_url = commit.comments_url if commit is not None else NO_COMMENTS_URL
-    return issue_key, commit_message, commit_url
+    return set(issue_keys), commit_message, commit_url
+
+
+def resolve_issue_keys(issue_keys):
+    issue_keys_string = None
+    for issue_key in issue_keys:
+        if issue_keys_string is None:
+            issue_keys_string = issue_key
+        else:
+            issue_keys_string += ", %s" % issue_key
+    return issue_keys_string if issue_keys_string is not None else NO_ISSUE_KEY
 
 
 def map_version_issue(smell_dict, output_directory, github_repository_name, prefix):
     github_commit_service = GitHubCommitService(github_repository_name)
-    with open('%s/version_issue_%s.csv' % (output_directory, prefix), mode='w') as csv_file:
-        fieldnames = ['commit_sha', 'issue_key', 'commit_message', 'commit_comments_url']
+    with open('%s/issue_for_commit_sha_in_%s.csv' % (output_directory, prefix.casefold()), mode='w') as csv_file:
+        fieldnames = ['commit_sha',
+                      'issue_key(s)',
+                      '#_cyclic_dependencies',
+                      '#_hub_like_dependencies',
+                      '#_unstable_dependencies',
+                      'commit_message',
+                      'commit_comments_url']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         for commit_sha in [*smell_dict]:
@@ -124,13 +153,24 @@ def map_version_issue(smell_dict, output_directory, github_repository_name, pref
                 print("Stop programme because of GitHubCommitServiceException!")
                 print(e.message)
                 return
-            issue_key, commit_message, comment_url = extract_commit_information(commit, prefix)
+            issue_keys, commit_message, comment_url = extract_commit_information(commit, prefix)
+            cyclic_dependencies = hub_like_dependencies = unstable_dependencies = 0
+            for smell in smell_dict[commit_sha]:
+                if smell.smell_type == "cyclicDep":
+                    cyclic_dependencies += 1
+                if smell.smell_type == "hubLikeDep":
+                    hub_like_dependencies += 1
+                if smell.smell_type == "unstableDep":
+                    unstable_dependencies += 1
             writer.writerow({
-                'commit_sha': commit_sha,
-                'issue_key': issue_key,
-                'commit_message': commit_message,
-                'commit_comments_url': comment_url
-            })
+                    'commit_sha': commit_sha,
+                    'issue_key(s)': resolve_issue_keys(issue_keys),
+                    'commit_message': commit_message,
+                    '#_cyclic_dependencies': cyclic_dependencies,
+                    '#_hub_like_dependencies': hub_like_dependencies,
+                    '#_unstable_dependencies': unstable_dependencies,
+                    'commit_comments_url': comment_url
+                })
 
 
 def evaluate_input():

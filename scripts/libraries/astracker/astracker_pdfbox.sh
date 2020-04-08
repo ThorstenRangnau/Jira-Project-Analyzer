@@ -1,17 +1,14 @@
 #!/bin/bash
-#SBATCH --time=6-00:00:00
+#SBATCH --time=10-00:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=24
-#SBATCH --job-name=astracker_tajo
-#SBATCH --mem=64GB
+#SBATCH --job-name=astracker_pdfbox
+#SBATCH --mem=128GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=t.rangnau@student.rug.nl
-#SBATCH --output=job-%j-astracker-tajo.log
+#SBATCH --output=job-%j-astracker-pdf-box.log
 #SBATCH --partition=regular
 
-# 22.2K LOC
-
-# TODO: Maybe copying also the files to the node to increase speed ???
 
 echo Load modules ...
 ml load OpenJDK/11.0.2
@@ -22,6 +19,7 @@ mkdir $TMPDIR/archive-tmp
 mkdir $TMPDIR/classes
 mkdir $TMPDIR/generated-sources
 mkdir $TMPDIR/maven-status
+mkdir $TMPDIR/pdfbox_arcan_analysis
 
 echo Copy files ...
 
@@ -30,6 +28,7 @@ cp -rf /home/s3570282/ondemand/data/astracker/target/archive-tmp/ $TMPDIR/archiv
 cp -rf /home/s3570282/ondemand/data/astracker/target/classes/ $TMPDIR/classes/
 cp -rf /home/s3570282/ondemand/data/astracker/target/generated-sources/ $TMPDIR/generated-sources/
 cp -rf /home/s3570282/ondemand/data/astracker/target/maven-status/ $TMPDIR/maven-status/
+cp -rf /data/s3570282/results/pdfbox_arcan_analysis/ $TMPDIR/pdfbox_arcan_analysis/
 
 echo Change rights ...
 
@@ -41,4 +40,4 @@ chmod +rwx $TMPDIR/maven-status/
 
 echo Start program ...
 
-java -Xms24g -Xmx48g -jar $TMPDIR/astracker-0.9.0-jar-with-dependencies.jar -i /data/s3570282/results/tajo_arcan_analysis/ -p tajo -o /data/s3570282/results/tajo_astracker_analysis/ -pC
+java -Xmx96g -jar $TMPDIR/astracker-0.9.0-jar-with-dependencies.jar -i $TMPDIR/pdfbox_arcan_analysis/ -p pdfbox -o /data/s3570282/results/pdfbox_astracker_analysis/ -pC

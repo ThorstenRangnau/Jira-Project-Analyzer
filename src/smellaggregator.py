@@ -251,8 +251,11 @@ def extract_issue_information(issue_keys, output_directory, prefix):
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         for issue_key in issue_keys:
-            issue_list = jira.search_issues("id=\"%s\"" % issue_key)
-            issue = issue_list[0]
+            try:
+                issue_list = jira.search_issues("id=\"%s\"" % issue_key)
+                issue = issue_list[0]
+            except JIRAError:
+                issue = None
             writer.writerow(render_issue_information(issue, issue_key))
 
 
@@ -301,3 +304,4 @@ if __name__ == "__main__":
 
 # python smellaggregator.py -i /Users/trangnau/RUG/master-thesis/Jira-Project-Analyzer/output/trackASOutput/antlr/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/pdfbox -k PDFBOX
 # python smellaggregator.py -i /Users/trangnau/Downloads/smell-characteristics-consecOnly.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/derby -k DERBY
+# python smellaggregator.py -i /Users/trangnau/Downloads/smell-characteristics-consecOnly-tajo.csv -o /Users/trangnau/RUG/master-thesis/results/ -p -g apache/tajo -k TAJO

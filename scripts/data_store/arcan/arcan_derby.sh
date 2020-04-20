@@ -11,6 +11,8 @@
 
 # no information about LOC
 
+# finished but not applicable
+
 echo Load modules ...
 ml load OpenJDK/11.0.2
 

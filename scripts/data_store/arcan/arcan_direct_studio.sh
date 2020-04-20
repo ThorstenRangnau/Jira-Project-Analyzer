@@ -11,6 +11,8 @@
 
 # 264  LOC
 
+# finished
+
 echo Load modules ...
 ml load OpenJDK/11.0.2
 

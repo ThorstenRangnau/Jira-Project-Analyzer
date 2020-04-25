@@ -8,15 +8,26 @@ def import_csv_content(path_to_file):
 
 class FileImporter(object):
 
-    def import_analysis_results(self, path_to_file):
-        csv_file = import_csv_content(path_to_file)
-        return self.convert_csv_restults(csv_file)
+    def import_analysis_results(self, path_to_file, commit_sha=None):
+        # TODO: add analysis report!
+        smells = dict()
+        with open(path_to_file, mode="r") as csv_file:
+            for idx, row in enumerate(csv.DictReader(csv_file)):
+                # checking for issue is merely an optimization for astracker results
+                if commit_sha is not None and row["commit_sha"] != commit_sha:
+                    continue
+                smells[idx] = self.convert_csv_row(row)
+        return smells
 
-    def convert_csv_restults(self, csv_file):
+    def convert_csv_row(self, csv_file):
         raise Exception("Method not implemented")
 
 
 class ASTrackerImporter(FileImporter):
 
-    def convert_csv_restults(self, csv_file):
-        print("Inside ASTrackerImporter")
+    def convert_csv_row(self, row):
+        return {
+            "unique_smell_id": row["unique_smell_id"],
+            "smell_type": row["smell_type"],
+            "affected_elements": row["affected_elements"]
+        }

@@ -9,7 +9,7 @@
 #SBATCH --output=job-%j-arcan-sqoop.log
 #SBATCH --partition=regular
 
-# 8.84 K LOC
+# 328 K LOC
 
 echo Load modules ...
 ml load OpenJDK/11.0.2

@@ -1,0 +1,82 @@
+@startuml
+
+interface SmellValidator {
+    validateSmell(validationSmells, existingSmells)
+}
+
+interface FileImporter {
+    import(filePath)
+}
+
+
+abstract class Smell {
+Components[] participatingComponents
+}
+
+abstract class AnalysisResults {
+    String version
+    Smell[] smells
+}
+
+class ValidationResult{
+    String validationSmell
+    State state
+}
+
+class CyclicDependency {
+
+}
+
+class ASTrackerResults {
+
+}
+
+class DesigniteResults {
+
+}
+
+class ASTrackerImporter {
+
+}
+
+class DesigniteImporter {
+
+}
+
+SmellValidator - AnalysisResults: compares >
+SmellValidator --> ValidationResult: creates >
+
+Smell <|-- CyclicDependency
+AnalysisResults <|-- ASTrackerResults
+AnalysisResults <|-- DesigniteResults
+
+AnalysisResults o-- Smell
+
+FileImporter <|-- ASTrackerImporter
+FileImporter <|-- DesigniteImporter
+
+
+FileImporter --> AnalysisResults: imports >
+
+
+
+
+@enduml
+
+List <|-- AbstractList
+Collection <|-- AbstractCollection
+
+Collection <|- List
+AbstractCollection <|- AbstractList
+AbstractList <|-- ArrayList
+
+class ArrayList {
+Object[] elementData
+size()
+}
+
+enum TimeUnit {
+DAYS
+HOURS
+MINUTES
+}

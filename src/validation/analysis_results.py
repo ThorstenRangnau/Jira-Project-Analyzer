@@ -1,17 +1,12 @@
+from .smell import CyclicDependency
+
+
 class AnalysisResult(object):
 
-    def __init__(self, version, smells):
+    def __init__(self, version):
         self.version = version
-        self.smells = smells
+        self.cyclic_dependencies = list()
 
-
-class ASTrackerResults(AnalysisResult):
-
-    def __init__(self, version, smells):
-        super().__init__(version, smells)
-
-
-class DesigniteResults(AnalysisResult):
-
-    def __init__(self, version, smells):
-        super().__init__(version, smells)
+    def add_smell(self, smell):
+        if isinstance(smell, CyclicDependency):
+            self.cyclic_dependencies.append(smell)

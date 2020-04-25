@@ -5,6 +5,7 @@ def extract_participating_components(components):
     return participating_components
 
 
+
 class Smell(object):
 
     def __init__(self, id, components):

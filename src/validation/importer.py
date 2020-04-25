@@ -3,24 +3,36 @@ import re
 
 from validation.smell import CyclicDependency
 
+from validation.analysis_results import AnalysisResult
 
-def import_csv_content(path_to_file):
-    with open(path_to_file, mode="r") as csv_file:
-        return csv.DictReader(csv_file)
+ASTRACKER_UNWANTED = ["unstableDep", "hubLikeDep"]
+DESIGNITE_UNWANTED = ["Feature Concentration", "Dense Structure", "God Component", "Unstable Dependency", ""]
+
+
+def extract_cyclic_components(smell_cause):
+    smell_list = re.findall("(?:^\w+|\w+\.\w+)+", smell_cause)
+    if "The" in smell_list:  # necessary because regex is not working probably
+        smell_list.remove("The")
+    return smell_list
 
 
 class FileImporter(object):
 
-    def import_analysis_results(self, path_to_file, commit_sha=None):
-        # TODO: add analysis report!
-        smells = dict()
+    def import_analysis_results(self, path_to_file, commit_sha, consider_version):
+        analysis_result = AnalysisResult(commit_sha)
         with open(path_to_file, mode="r") as csv_file:
             for idx, row in enumerate(csv.DictReader(csv_file)):
                 # checking for issue is merely an optimization for astracker results
-                if commit_sha is not None and row["commit_sha"] != commit_sha:
+                if consider_version and row["commit_sha"] != commit_sha:
                     continue
-                smells[idx] = self.convert_csv_row(row, idx)
-        return smells
+                # skip unwanted smells of ASTracker results
+                if "smell_type" in row.keys() and row["smell_type"] in ASTRACKER_UNWANTED:
+                    continue
+                    # skip unwanted smells of ASTracker results
+                if "Architecture Smell" in row.keys() and row["Architecture Smell"] in DESIGNITE_UNWANTED:
+                    continue
+                analysis_result.add_smell(self.convert_csv_row(row, idx))
+        return analysis_result
 
     def convert_csv_row(self, row, smell_id):
         raise Exception("Method not implemented")
@@ -34,13 +46,6 @@ class ASTrackerImporter(FileImporter):
         if smell_type == "cyclicDep":
             smell = CyclicDependency(row["unique_smell_id"], row["affected_elements"])
         return smell
-
-
-def extract_cyclic_components(smell_cause):
-    smell_list = re.findall("(?:^\w+|\w+\.\w+)+", smell_cause)
-    if "The" in smell_list:
-        smell_list.remove("The")
-    return smell_list
 
 
 class DesigniteImporter(FileImporter):

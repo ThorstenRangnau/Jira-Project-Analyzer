@@ -1,5 +1,7 @@
 import csv
 
+from validation.smell import CyclicDependency
+
 
 def import_csv_content(path_to_file):
     with open(path_to_file, mode="r") as csv_file:
@@ -26,8 +28,8 @@ class FileImporter(object):
 class ASTrackerImporter(FileImporter):
 
     def convert_csv_row(self, row):
-        return {
-            "unique_smell_id": row["unique_smell_id"],
-            "smell_type": row["smell_type"],
-            "affected_elements": row["affected_elements"]
-        }
+        smell_type = row["smell_type"]
+        smell = None
+        if smell_type == "cyclicDep":
+            smell = CyclicDependency(row["unique_smell_id"], row["affected_elements"])
+        return smell

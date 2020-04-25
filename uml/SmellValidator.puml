@@ -27,14 +27,6 @@ class CyclicDependency {
 
 }
 
-class ASTrackerResults {
-
-}
-
-class DesigniteResults {
-
-}
-
 class ASTrackerImporter {
 
 }
@@ -43,12 +35,18 @@ class DesigniteImporter {
 
 }
 
+class CyclicDependency {
+
+}
+
+class Component {
+    String name
+}
+
 SmellValidator - AnalysisResults: compares >
 SmellValidator --> ValidationResult: creates >
 
 Smell <|-- CyclicDependency
-AnalysisResults <|-- ASTrackerResults
-AnalysisResults <|-- DesigniteResults
 
 AnalysisResults o-- Smell
 

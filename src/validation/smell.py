@@ -18,6 +18,12 @@ class CyclicDependency(Smell):
         super().__init__(id, components)
 
 
+class UnstableDependency(Smell):
+
+    def __init__(self, id, components):
+        super().__init__(id, components)
+
+
 class Component(object):
 
     def __init__(self, name):

@@ -1,19 +1,22 @@
 import csv
 import re
 
-from validation.smell import CyclicDependency
+from validation.smell import CyclicDependency, UnstableDependency
 from validation.analysis_results import AnalysisResult
 
-ASTRACKER_UNWANTED = ["unstableDep", "hubLikeDep"]
-DESIGNITE_UNWANTED = ["Feature Concentration", "Dense Structure", "God Component", "Unstable Dependency", ""]
+ASTRACKER_UNWANTED = ["hubLikeDep"]
+DESIGNITE_UNWANTED = ["Feature Concentration", "Dense Structure", "God Component"]
 
 
 def extract_cyclic_components_designite(smell_cause):
     double_name = re.findall("\s([a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
     triple_name = re.findall("\s([a-z]+\.[a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
-    quadruple_name = re.findall("\s([a-z]+\.[a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
+    quadruple_name = re.findall("\s([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
     quintuple_name = re.findall("\s([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
-    return double_name + triple_name + quadruple_name + quintuple_name
+    sextuple_name = re.findall("\s([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
+    septuple_name = re.findall("\s([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
+    octuple_name = re.findall("\s([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
+    return double_name + triple_name + quadruple_name + quintuple_name + sextuple_name + septuple_name + octuple_name
 
 
 def extract_cyclic_components_astracker(smell_cause):
@@ -21,7 +24,10 @@ def extract_cyclic_components_astracker(smell_cause):
     triple_name = re.findall("(?:\s|\[)([a-z]+\.[a-z]+\.[a-z]+)(?:\,|\])", smell_cause)
     quadruple_name = re.findall("(?:\s|\[)([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\,|\])", smell_cause)
     quintuple_name = re.findall("(?:\s|\[)([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\,|\])", smell_cause)
-    return double_name + triple_name + quadruple_name + quintuple_name
+    sextuple_name = re.findall("(?:\s|\[)([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\,|\])", smell_cause)
+    septuple_name = re.findall("(?:\s|\[)([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\,|\])", smell_cause)
+    octuple_name = re.findall("(?:\s|\[)([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\,|\])", smell_cause)
+    return double_name + triple_name + quadruple_name + quintuple_name + sextuple_name + septuple_name + octuple_name
 
 
 class FileImporter(object):
@@ -53,6 +59,8 @@ class ASTrackerImporter(FileImporter):
         smell = None
         if smell_type == "cyclicDep":
             smell = CyclicDependency(row["unique_smell_id"], extract_cyclic_components_astracker(row["affected_elements"]))
+        if smell_type == "unstableDep":
+            smell = UnstableDependency(row["unique_smell_id"], extract_cyclic_components_astracker(row["affected_elements"]))
         return smell
 
 
@@ -63,4 +71,6 @@ class DesigniteImporter(FileImporter):
         smell = None
         if smell_type == "Cyclic Dependency":
             smell = CyclicDependency(smell_id, extract_cyclic_components_designite(row["Cause of the Smell"]))
+        if smell_type == "Unstable Dependency":
+            smell = UnstableDependency(smell_id, extract_cyclic_components_designite(row["Cause of the Smell"]))
         return smell

@@ -22,6 +22,7 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     astracker_results = ASTrackerImporter().import_analysis_results(args.path_to_validation_smells, args.commit_sha, True)
+    print("Start Desingite Import")
     designite_results = DesigniteImporter().import_analysis_results(args.path_to_existing_smells, args.commit_sha, False)
     report = SmellValidator().validate_smell(astracker_results, designite_results)
     for row in report:

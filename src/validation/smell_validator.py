@@ -19,6 +19,14 @@ class SmellValidator(object):
                 if matches >= 2:
                     match_list[existing_smell.id] = matches
             print("Found %d similar cycles for smell with id %s" % (len(match_list), smell.id))
-            key = max(match_list.items(), key=operator.itemgetter(1))[0]
-            print("The most similar cycle is id %s with %d matched components" % (key, match_list[key]))
+            if len(match_list) != 0:
+                # TODO: atm the first cycle with the mst matches is printed --> refactor in order to provide information about all cycles
+                # print(match_list)
+                # key_s = max(match_list.items(), key=operator.itemgetter(1))
+                # print(key_s)
+                # key = key_s[0]
+                key = max(match_list.items(), key=operator.itemgetter(1))[0]
+                print("The most similar cycle is id %s with %d matched components" % (key, match_list[key]))
+            else:
+                print("There is no similar cycle and hence the smell could not be verified!")
 

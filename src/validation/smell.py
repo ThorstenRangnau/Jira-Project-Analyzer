@@ -1,7 +1,5 @@
 def extract_participating_components(components):
     participating_components = list()
-    print(components)
-    print(type(components))
     for component in components:
         participating_components.append(Component(component))
     return participating_components

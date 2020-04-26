@@ -2,18 +2,26 @@ import csv
 import re
 
 from validation.smell import CyclicDependency
-
 from validation.analysis_results import AnalysisResult
 
 ASTRACKER_UNWANTED = ["unstableDep", "hubLikeDep"]
 DESIGNITE_UNWANTED = ["Feature Concentration", "Dense Structure", "God Component", "Unstable Dependency", ""]
 
 
-def extract_cyclic_components(smell_cause):
-    smell_list = re.findall("(?:^\w+|\w+\.\w+)+", smell_cause)
-    if "The" in smell_list:  # necessary because regex is not working probably
-        smell_list.remove("The")
-    return smell_list
+def extract_cyclic_components_designite(smell_cause):
+    double_name = re.findall("\s([a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
+    triple_name = re.findall("\s([a-z]+\.[a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
+    quadruple_name = re.findall("\s([a-z]+\.[a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
+    quintuple_name = re.findall("\s([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\;|$)", smell_cause)
+    return double_name + triple_name + quadruple_name + quintuple_name
+
+
+def extract_cyclic_components_astracker(smell_cause):
+    double_name = re.findall("(?:\s|\[)([a-z]+\.[a-z]+)(?:\,|\])", smell_cause)
+    triple_name = re.findall("(?:\s|\[)([a-z]+\.[a-z]+\.[a-z]+)(?:\,|\])", smell_cause)
+    quadruple_name = re.findall("(?:\s|\[)([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\,|\])", smell_cause)
+    quintuple_name = re.findall("(?:\s|\[)([a-z]+\.[a-z]+\.[a-z]+\.[a-z]+\.[a-z]+)(?:\,|\])", smell_cause)
+    return double_name + triple_name + quadruple_name + quintuple_name
 
 
 class FileImporter(object):
@@ -44,7 +52,7 @@ class ASTrackerImporter(FileImporter):
         smell_type = row["smell_type"]
         smell = None
         if smell_type == "cyclicDep":
-            smell = CyclicDependency(row["unique_smell_id"], row["affected_elements"])
+            smell = CyclicDependency(row["unique_smell_id"], extract_cyclic_components_astracker(row["affected_elements"]))
         return smell
 
 
@@ -54,5 +62,5 @@ class DesigniteImporter(FileImporter):
         smell_type = row["Architecture Smell"]
         smell = None
         if smell_type == "Cyclic Dependency":
-            smell = CyclicDependency(smell_id, extract_cyclic_components(row["Cause of the Smell"]))
+            smell = CyclicDependency(smell_id, extract_cyclic_components_designite(row["Cause of the Smell"]))
         return smell

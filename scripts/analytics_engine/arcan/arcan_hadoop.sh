@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --job-name=arcan_hadoop
-#SBATCH --mem=125GB
+#SBATCH --mem=120GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=t.rangnau@student.rug.nl
 #SBATCH --output=job-%j-arcan-hadoop.log
@@ -35,4 +35,4 @@ chmod +rwx $TMPDIR/hadoop/
 
 echo Start program ...
 
-java -Xmx120g -jar $TMPDIR/Arcan-1.4.0-SNAPSHOT.jar -p $TMPDIR/hadoop/ -git -out /data/pg-search/arcan_results/hadoop_arcan_analysis/ -singleVersion -branch trunk -nWeeks 0 -startDate 2015-01-15
+java -Xmx96g -jar $TMPDIR/Arcan-1.4.0-SNAPSHOT.jar -p $TMPDIR/hadoop/ -git -out /data/pg-search/arcan_results/hadoop_arcan_analysis/ -singleVersion -branch trunk -nWeeks 0 -startDate 2010-07-26

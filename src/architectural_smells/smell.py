@@ -100,6 +100,44 @@ class Version(object):
         self.smells_by_type[CYCLIC_DEPENDENCY] = dict()
         self.smells_by_type[UNSTABLE_DEPENDENCY] = dict()
         self.smells_by_type[HUBLIKE_DEPENDENCY] = dict()
+        self.cyclic_dependencies = None
+        self.unstable_dependencies = None
+        self.hublike_depenencies = None
+        self.date = None
+        self.issue_key = None
+        self.message = None
+        self.url = None
+        self.issue_type = None
+        self.assignee = None
+        self.priority = None
+        self.issue_created = None
+        self.issue_resolution_date = None
+        self.issue_updated = None
+        self.resolution_time = None
+        self.resolution_status = None
+        self.issue_summary = None
+
+    def add_commit_information(self, issue_key, message, url):
+        self.issue_key = issue_key
+        self.message = message
+        self.url = url
+
+    def add_smell_numbers(self, cyclic_dependencies, unstable_dependencies, hublike_dependencies):
+        self.cyclic_dependencies = cyclic_dependencies
+        self.unstable_dependencies = unstable_dependencies
+        self.hublike_depenencies = hublike_dependencies
+
+    def get_number_cyclic_dependencies(self):
+        return self.cyclic_dependencies
+
+    def get_number_unstable_dependencies(self):
+        return self.unstable_dependencies
+
+    def get_number_hublike_dependencies(self):
+        return self.hublike_depenencies
+
+    def get_total_smell_number(self):
+        return self.get_number_cyclic_dependencies() + self.get_number_unstable_dependencies() + self.get_number_hublike_dependencies()
 
     def add_smell(self, smell):
         if isinstance(smell, CyclicDependency):

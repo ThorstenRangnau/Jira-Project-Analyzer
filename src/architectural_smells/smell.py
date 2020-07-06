@@ -132,3 +132,11 @@ class Version(object):
 
     def get_hublike_dependencies(self):
         return self.smells_by_type[HUBLIKE_DEPENDENCY]
+
+    def get_date(self):
+        if self.has_cyclic_dependencies():
+            return list(self.smells_by_type[CYCLIC_DEPENDENCY].values())[0].birth_day
+        if self.has_unstable_dependencies():
+            return list(self.smells_by_type[UNSTABLE_DEPENDENCY].values())[0].birth_day
+        if self.has_hublike_dependencies():
+            return list(self.smells_by_type[HUBLIKE_DEPENDENCY].values())[0].birth_day

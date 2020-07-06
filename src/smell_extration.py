@@ -24,6 +24,9 @@ AVRG_PATH_LENGTH = 'avrgInternalPathLength'
 AFFECTED_CLASS_RATIO = 'affectedClassesRatio'
 COMMIT_SHA = 'commit_sha'
 SMELL_ID = 'unique_smell_id'
+CD_KEY = 'CYCLIC_DEPENDENCY'
+UD_KEY = 'UNSTABLE_DEPENDENCY'
+HD_KEY = 'HUBLIKE_DEPENDENCY'
 
 
 def extract_cyclic_components_astracker(smell_cause):
@@ -97,7 +100,7 @@ def write_smells_csv(directory, name, smells_sorted_by_version):
                 for smell_id, smell in smells.items():
                     writer.writerow({
                         'commit_sha': commit_sha,
-                        'smell_type': smell_type,
+                        'smell_type': smell_type.lower(),
                         'unique_smell_id': smell_id,
                         'birth_day': smell.birth_day,
                         'size': smell.size,
@@ -110,6 +113,27 @@ def write_smells_csv(directory, name, smells_sorted_by_version):
                                                                                            HubLikeDependency) else 'NA',
                         'affected_elements': smell.get_affected_elements()
                     })
+
+
+def write_versions_csv(directory, name, smells_sorted_by_version):
+    with open('%s/%s_smells_aggregated_by_version.csv' % (directory, name), mode='w') as csv_file:
+        fieldnames = ['id',
+                      'commit_sha',
+                      'date',
+                      'cyclic_dependencies',
+                      'unstable_dependencies',
+                      'hub_like_dependencies']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for idx, (commit_sha, version) in enumerate(smells_sorted_by_version.items()):
+            writer.writerow({
+                'id': idx + 1,
+                'commit_sha': commit_sha,
+                'date': version.get_date(),
+                'cyclic_dependencies': len(version.smells_by_type[CD_KEY]),
+                'unstable_dependencies': len(version.smells_by_type[UD_KEY]),
+                'hub_like_dependencies': len(version.smells_by_type[HD_KEY])
+            })
 
 
 def parse_args():
@@ -127,3 +151,4 @@ if __name__ == "__main__":
     args = parse_args()
     smells_by_version = extract_new_incurred_smells(args.directory)
     write_smells_csv(args.directory, args.name, smells_by_version)
+    write_versions_csv(args.directory, args.name, smells_by_version)

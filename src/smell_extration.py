@@ -115,7 +115,21 @@ def write_smells_csv(directory, name, smells_sorted_by_version):
                     })
 
 
+def check_first_date(comparison_date, first, last):
+    earliest_date = first
+    latest_date = last
+    if first is None or last is None:
+        return comparison_date, comparison_date
+    if comparison_date < first:
+        earliest_date = comparison_date
+    if comparison_date > last:
+        latest_date = comparison_date
+    return earliest_date, latest_date
+
+
 def write_versions_csv(directory, name, smells_sorted_by_version):
+    total_cd = total_ud = total_hd = 0
+    first_date = last_date = None
     with open('%s/%s_smells_aggregated_by_version.csv' % (directory, name), mode='w') as csv_file:
         fieldnames = ['id',
                       'commit_sha',
@@ -126,6 +140,10 @@ def write_versions_csv(directory, name, smells_sorted_by_version):
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         for idx, (commit_sha, version) in enumerate(smells_sorted_by_version.items()):
+            total_cd += len(version.smells_by_type[CD_KEY])
+            total_ud += len(version.smells_by_type[UD_KEY])
+            total_hd += len(version.smells_by_type[HD_KEY])
+            first_date, last_date = check_first_date(version.get_date(), first_date, last_date)
             writer.writerow({
                 'id': idx + 1,
                 'commit_sha': commit_sha,
@@ -134,6 +152,25 @@ def write_versions_csv(directory, name, smells_sorted_by_version):
                 'unstable_dependencies': len(version.smells_by_type[UD_KEY]),
                 'hub_like_dependencies': len(version.smells_by_type[HD_KEY])
             })
+    with open('%s/%s_aggregated_metrics.csv' % (directory, name), mode='w') as csv_file:
+        fieldnames = ['total_versions',
+                      'from',
+                      'till',
+                      'total_smells',
+                      'total_cyclic_dependencies',
+                      'total_unstable_dependencies',
+                      'total_hublike_dependencies']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerow({
+            'total_versions': len(smells_sorted_by_version),
+            'from': first_date,
+            'till': last_date,
+            'total_smells': total_cd + total_ud + total_ud,
+            'total_cyclic_dependencies': total_cd,
+            'total_unstable_dependencies': total_ud,
+            'total_hublike_dependencies': total_hd
+        })
 
 
 def parse_args():

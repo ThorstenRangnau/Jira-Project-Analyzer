@@ -1,7 +1,9 @@
 from datetime import datetime
 
-
 DATE_FORMATTER = '%d-%m-%Y'
+CYCLIC_DEPENDENCY = 'CYCLIC_DEPENDENCY'
+UNSTABLE_DEPENDENCY = 'UNSTABLE_DEPENDENCY'
+HUBLIKE_DEPENDENCY = 'HUBLIKE_DEPENDENCY'
 
 
 def extract_participating_elements(affected_elements):
@@ -24,6 +26,9 @@ class Smell(object):
         self.version = version
         self.affected_elements = extract_participating_elements(affected_elements)
         self.size = size
+
+    def get_affected_elements(self):
+        return [element.name for element in self.affected_elements]
 
 
 class CyclicDependency(Smell):
@@ -85,3 +90,45 @@ class Element(object):
 
     def __init__(self, name):
         self.name = name
+
+
+class Version(object):
+
+    def __init__(self, commit_sha):
+        self.commit_sha = commit_sha
+        self.smells_by_type = dict()
+        self.smells_by_type[CYCLIC_DEPENDENCY] = dict()
+        self.smells_by_type[UNSTABLE_DEPENDENCY] = dict()
+        self.smells_by_type[HUBLIKE_DEPENDENCY] = dict()
+
+    def add_smell(self, smell):
+        if isinstance(smell, CyclicDependency):
+            if smell.unique_smell_id in self.smells_by_type[CYCLIC_DEPENDENCY]:
+                raise Exception("Cyclic Dependency Smell instance with id %s already exist" % smell.unique_smell_id)
+            self.smells_by_type[CYCLIC_DEPENDENCY][smell.unique_smell_id] = smell
+        if isinstance(smell, UnstableDependency):
+            if smell.unique_smell_id in self.smells_by_type[UNSTABLE_DEPENDENCY]:
+                raise Exception("Unstable Dependency Smell instance with id %s already exist" % smell.unique_smell_id)
+            self.smells_by_type[UNSTABLE_DEPENDENCY][smell.unique_smell_id] = smell
+        if isinstance(smell, HubLikeDependency):
+            if smell.unique_smell_id in self.smells_by_type[HUBLIKE_DEPENDENCY]:
+                raise Exception("Hub-Like Dependency Smell instance with id %s already exist" % smell.unique_smell_id)
+            self.smells_by_type[HUBLIKE_DEPENDENCY][smell.unique_smell_id] = smell
+
+    def has_cyclic_dependencies(self):
+        return True if len(self.smells_by_type[CYCLIC_DEPENDENCY]) > 0 else False
+
+    def has_unstable_dependencies(self):
+        return True if len(self.smells_by_type[UNSTABLE_DEPENDENCY]) > 0 else False
+
+    def has_hublike_dependencies(self):
+        return True if len(self.smells_by_type[HUBLIKE_DEPENDENCY]) > 0 else False
+
+    def get_cyclic_dependencies(self):
+        return self.smells_by_type[CYCLIC_DEPENDENCY]
+
+    def get_unstable_dependencies(self):
+        return self.smells_by_type[UNSTABLE_DEPENDENCY]
+
+    def get_hublike_dependencies(self):
+        return self.smells_by_type[HUBLIKE_DEPENDENCY]

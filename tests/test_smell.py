@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append('../src')
-from architectural_smells.smell import CyclicDependency, UnstableDependency, HubLikeDependency
+from architectural_smells.smell import CyclicDependency, UnstableDependency, HubLikeDependency, Version
 
 CD_SMELL_ID = '8646'
 CD_BIRTH_DATE = '18-9-2016'
@@ -32,9 +32,36 @@ HD_INTERNAL_PATH_LENGTH = -1
 HD_CLASS_RATIO = -1
 
 
+def create_cyclic_dependency():
+    return CyclicDependency(CD_SMELL_ID, CD_BIRTH_DATE, CD_VERSION, CD_AFFECTED_ELEMENTS, CD_SIZE, CD_SHAPE)
+
+
+def create_unstable_dependency():
+    return UnstableDependency(UD_SMELL_ID, UD_BIRTH_DATE, UD_VERSION, UD_AFFECTED_ELEMENTS, UD_SIZE, UD_INSTABILITY_GAP,
+                              UD_DOUD)
+
+
+def create_hublike_dependency():
+    return HubLikeDependency(HD_SMELL_ID, HD_BIRTH_DATE, HD_VERSION, HD_AFFECTED_ELEMENTS, HD_SIZE,
+                             HD_INTERNAL_PATH_LENGTH, HD_CLASS_RATIO)
+
+
+def create_cyclic_dependency_same_version(smell_id=CD_SMELL_ID):
+    return CyclicDependency(smell_id, CD_BIRTH_DATE, CD_VERSION, CD_AFFECTED_ELEMENTS, CD_SIZE, CD_SHAPE)
+
+
+def create_unstable_dependency_same_version(smell_id=UD_SMELL_ID):
+    return UnstableDependency(smell_id, CD_BIRTH_DATE, CD_VERSION, UD_AFFECTED_ELEMENTS, UD_SIZE, UD_INSTABILITY_GAP,
+                              UD_DOUD)
+
+
+def create_hublike_dependency_same_version(smell_id=HD_SMELL_ID):
+    return HubLikeDependency(smell_id, CD_BIRTH_DATE, CD_VERSION, HD_AFFECTED_ELEMENTS, HD_SIZE,
+                             HD_INTERNAL_PATH_LENGTH, HD_CLASS_RATIO)
+
+
 def test_cyclic_dependency():
-    cyclic_dependency = CyclicDependency(CD_SMELL_ID, CD_BIRTH_DATE, CD_VERSION, CD_AFFECTED_ELEMENTS, CD_SIZE,
-                                         CD_SHAPE)
+    cyclic_dependency = create_cyclic_dependency()
     assert isinstance(cyclic_dependency, CyclicDependency)
     assert cyclic_dependency.unique_smell_id == CD_SMELL_ID
     assert cyclic_dependency.birth_day.year == 2016
@@ -47,8 +74,7 @@ def test_cyclic_dependency():
 
 
 def test_unstable_dependency():
-    unstable_dependency = UnstableDependency(UD_SMELL_ID, UD_BIRTH_DATE, UD_VERSION, UD_AFFECTED_ELEMENTS, UD_SIZE,
-                                             UD_INSTABILITY_GAP, UD_DOUD)
+    unstable_dependency = create_unstable_dependency()
     assert isinstance(unstable_dependency, UnstableDependency)
     assert unstable_dependency.unique_smell_id == UD_SMELL_ID
     assert unstable_dependency.birth_day.year == 2008
@@ -62,8 +88,7 @@ def test_unstable_dependency():
 
 
 def test_hublike_dependency():
-    hublike_dependency = HubLikeDependency(HD_SMELL_ID, HD_BIRTH_DATE, HD_VERSION, HD_AFFECTED_ELEMENTS, HD_SIZE,
-                                           HD_INTERNAL_PATH_LENGTH, HD_CLASS_RATIO)
+    hublike_dependency = create_hublike_dependency()
     assert isinstance(hublike_dependency, HubLikeDependency)
     assert hublike_dependency.unique_smell_id == HD_SMELL_ID
     assert hublike_dependency.birth_day.year == 2009
@@ -74,3 +99,24 @@ def test_hublike_dependency():
     assert hublike_dependency.size == HD_SIZE
     assert hublike_dependency.avrg_internal_path_length == HD_INTERNAL_PATH_LENGTH
     assert hublike_dependency.affected_classes_ratio == HD_CLASS_RATIO
+
+
+def test_version():
+    version = Version(CD_VERSION)
+    version.add_smell(create_cyclic_dependency_same_version())
+    version.add_smell(create_cyclic_dependency_same_version(2))
+    version.add_smell(create_unstable_dependency_same_version())
+    version.add_smell(create_unstable_dependency_same_version(3))
+    version.add_smell(create_hublike_dependency_same_version())
+    version.add_smell(create_hublike_dependency_same_version(4))
+    assert len(version.smells_by_type) == 3
+    assert version.has_cyclic_dependencies()
+    assert version.has_unstable_dependencies()
+    assert version.has_hublike_dependencies()
+    assert len(version.get_cyclic_dependencies()) == 2
+    assert len(version.get_unstable_dependencies()) == 2
+    assert len(version.get_hublike_dependencies()) == 2
+
+
+def test_duplicated_smell_id():
+    assert True

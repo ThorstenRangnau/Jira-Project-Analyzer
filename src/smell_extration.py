@@ -64,7 +64,7 @@ def create_smell(row):
 
 def extract_new_incurred_smells(path_to_csv_file):
     versions = dict()
-    with open(path_to_csv_file, mode="r") as csv_file:
+    with open('%s/smell-characteristics-consecOnly.csv' % path_to_csv_file, mode="r") as csv_file:
         for row in csv.DictReader(csv_file):
             if row[AFFECTED_COMPONENT_TYPE] == CLASS or row[SMELL_TYPE] == GOD_COMPONENT:
                 continue
@@ -115,10 +115,7 @@ def write_smells_csv(directory, name, smells_sorted_by_version):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", dest="input", required=True,
-        help="Path to input file -- needs to be an output of ASTracker")
-    parser.add_argument(
-        "-o", dest="output", required=True,
+        "-d", dest="directory", required=True,
         help="Path to input file -- needs to be an output of ASTracker")
     parser.add_argument(
         "-n", dest="name", required=True,
@@ -128,5 +125,5 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    smells_by_version = extract_new_incurred_smells(args.input)
-    write_smells_csv(args.output, args.name, smells_by_version)
+    smells_by_version = extract_new_incurred_smells(args.directory)
+    write_smells_csv(args.directory, args.name, smells_by_version)

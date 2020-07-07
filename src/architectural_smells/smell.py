@@ -123,9 +123,9 @@ class Version(object):
         self.url = url
 
     def add_smell_numbers(self, cyclic_dependencies, unstable_dependencies, hublike_dependencies):
-        self.cyclic_dependencies = cyclic_dependencies
-        self.unstable_dependencies = unstable_dependencies
-        self.hublike_depenencies = hublike_dependencies
+        self.cyclic_dependencies = int(cyclic_dependencies)
+        self.unstable_dependencies = int(unstable_dependencies)
+        self.hublike_depenencies = int(hublike_dependencies)
 
     def get_number_cyclic_dependencies(self):
         return self.cyclic_dependencies

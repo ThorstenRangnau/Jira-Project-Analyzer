@@ -65,12 +65,18 @@ def read_version_information(input_file, key):
 
 def fetch_issue_information(versions):
     jira = JIRA(APACHE_JIRA_SERVER, basic_auth=('ThorstenRangnau', 'IamStudying2019'))
-    for version in versions:
+    for idx, version in enumerate(versions):
+        if idx % 50 == 0:
+            print("Parse version %d form total of %d" % (idx, len(versions)))
         try:
             issue_list = jira.search_issues("id=\"%s\"" % version.issue_key)
             issue = issue_list[0]
         except JIRAError:
             issue = None
+        try:
+            comments = jira.comments(issue)
+        except JIRAError:
+            comments = None
         if issue is not None and issue.fields is not None:
             fields = issue.fields
             if fields.issuetype is not None:
@@ -92,8 +98,8 @@ def fetch_issue_information(versions):
                                                                     fields.resolutiondate)
             if fields.summary is not None:
                 version.issue_summary = fields.summary
-            # if fields.comment is not None and fields.comment.comments is not None:
-            #     version.comments = len(fields.comment.comments)
+        if comments is not None and isinstance(comments, list):
+            version.comments = len(comments)
     return versions
 
 

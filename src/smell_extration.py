@@ -166,7 +166,7 @@ def write_versions_csv(directory, name, smells_sorted_by_version):
             'total_versions': len(smells_sorted_by_version),
             'from': first_date,
             'till': last_date,
-            'total_smells': total_cd + total_ud + total_ud,
+            'total_smells': total_cd + total_ud + total_hd,
             'total_cyclic_dependencies': total_cd,
             'total_unstable_dependencies': total_ud,
             'total_hublike_dependencies': total_hd

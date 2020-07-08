@@ -50,6 +50,7 @@ def extract_commit_information(commit, issue_key):
 
 def fetch_commit_information(versions, github_repository_name, issue_key):
     github_commit_service = GitHubCommitService(github_repository_name)
+    total_issue_keys = 0
     for version in versions:
         try:
             commit = github_commit_service.get_commit(version.commit_sha)
@@ -60,12 +61,14 @@ def fetch_commit_information(versions, github_repository_name, issue_key):
             print(e.message)
             return
         keys, commit_message, commit_url = extract_commit_information(commit, issue_key)
+        total_issue_keys += len(keys)
         version.add_commit_information(keys, commit_message, commit_url)
-    return versions
+    coverage = (total_issue_keys / len(versions)) * 100
+    return versions, coverage
 
 
-def write_versions_to_csv(versions, output, name):
-    with open('%s/%s_commit_information.csv' % (output, name), mode='w') as csv_file:
+def write_versions_to_csv(versions, output, name, percent):
+    with open('%s/%s_commit_information-%d-percent.csv' % (output, name, percent), mode='w') as csv_file:
         fieldnames = ['id',
                       'date',
                       'issue_key',
@@ -116,7 +119,7 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     smell_versions = read_version_information(args.input)
-    versions_with_commits = fetch_commit_information(smell_versions, args.github_repository_name, args.issue_key)
-    write_versions_to_csv(versions_with_commits, args.output, args.name)
+    versions_with_commits, percentage = fetch_commit_information(smell_versions, args.github_repository_name, args.issue_key)
+    write_versions_to_csv(versions_with_commits, args.output, args.name, percentage)
 
 # python commit_fetcher.py -i /Users/trangnau/RUG/master-thesis/results/commons-lang/commons-lang_smells_aggregated_by_version.csv -g apache/commons-lang -k LANG -o /Users/trangnau/RUG/master-thesis/results/commons-lang/ -n commons-lang

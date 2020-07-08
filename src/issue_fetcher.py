@@ -92,6 +92,8 @@ def fetch_issue_information(versions):
                                                                     fields.resolutiondate)
             if fields.summary is not None:
                 version.issue_summary = fields.summary
+            # if fields.comment is not None and fields.comment.comments is not None:
+            #     version.comments = len(fields.comment.comments)
     return versions
 
 
@@ -113,7 +115,8 @@ def write_issues_to_csv(versions, output, name):
                       'resolution_status',
                       'created_at',
                       'resolution_date',
-                      'updated_at']
+                      'updated_at',
+                      'comments']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         for idx, version in enumerate(versions):
@@ -134,7 +137,8 @@ def write_issues_to_csv(versions, output, name):
                 'resolution_status': version.resolution_status if version.resolution_status is not None else " ",
                 'created_at': version.issue_created if version.issue_created is not None else " ",
                 'resolution_date': version.issue_resolution_date if version.issue_resolution_date is not None else " ",
-                'updated_at': version.issue_updated if version.issue_updated is not None else " "
+                'updated_at': version.issue_updated if version.issue_updated is not None else " ",
+                'comments': version.comments if version.comments is not None else " "
             })
 
 

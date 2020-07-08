@@ -116,6 +116,7 @@ class Version(object):
         self.resolution_time = None
         self.resolution_status = None
         self.issue_summary = None
+        self.comments = None
 
     def add_commit_information(self, issue_key, message, url):
         self.issue_key = issue_key

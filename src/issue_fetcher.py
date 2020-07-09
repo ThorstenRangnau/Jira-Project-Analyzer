@@ -67,7 +67,7 @@ def fetch_issue_information(versions):
     jira = JIRA(APACHE_JIRA_SERVER, basic_auth=('ThorstenRangnau', 'IamStudying2019'))
     for idx, version in enumerate(versions):
         if idx % 50 == 0:
-            print("Parse version %d form total of %d" % (idx, len(versions)))
+            print("Parse version %d from total of %d" % (idx, len(versions)))
         try:
             issue_list = jira.search_issues("id=\"%s\"" % version.issue_key)
             issue = issue_list[0]

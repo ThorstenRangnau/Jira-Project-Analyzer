@@ -2,11 +2,11 @@
 #SBATCH --time=4-00:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=24
-#SBATCH --job-name=astracker_cassandra
+#SBATCH --job-name=astracker_cassandra_with_properties
 #SBATCH --mem=256GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=t.rangnau@student.rug.nl
-#SBATCH --output=job-%j-astracker-cassandra.log
+#SBATCH --output=job-%j-astracker-cassandra-with-properies.log
 #SBATCH --partition=himem
 
 
@@ -20,7 +20,7 @@ mkdir $TMPDIR/cassandra_arcan_analysis
 echo Copy files ...
 
 cp /home/s3570282/ondemand/data/astracker_v1/astracker-1.0.0-jar-with-dependencies.jar $TMPDIR
-cp -Rf /data/pg-search/arcan_master_files/cassandra_trunk/. $TMPDIR/cassandra_arcan_analysis/
+cp -Rf /data/pg-search/arcan_master_files/cassandra_with_properties_arcan_master/. $TMPDIR/cassandra_arcan_analysis/
 
 echo Change rights ...
 
@@ -35,4 +35,4 @@ ls -l $TMPDIR/cassandra_arcan_analysis/ | wc -l
 
 echo Start program ...
 
-java -Xmx200g -jar $TMPDIR/astracker-1.0.0-jar-with-dependencies.jar -i $TMPDIR/cassandra_arcan_analysis/ -p cassandra -o /data/pg-search/astracker_master_results/cassandra_master_filtered/ -pC
+java -Xmx220g -jar $TMPDIR/astracker-1.0.0-jar-with-dependencies.jar -i $TMPDIR/cassandra_arcan_analysis/ -p cassandra -o /data/pg-search/astracker_master_results/cassandra_with_properties_master_filtered/ -pC

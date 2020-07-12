@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --time=02:30:00
+#SBATCH --time=2_12:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --job-name=clean_master_cassandra_with_properties

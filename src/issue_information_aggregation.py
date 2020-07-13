@@ -157,7 +157,7 @@ def aggregate_versions(version_information):
     return aggregated
 
 
-def write_aggregated_versions(directory, name, versions):
+def write_aggregated_versions(directory, name, versions, num_versions):
     with open('%s/%s_aggregated_issue_information.csv' % (directory, name), mode='w') as csv_file:
         fieldnames = [CATEGORIES,
                       ATTRIBUTES,
@@ -179,6 +179,10 @@ def write_aggregated_versions(directory, name, versions):
                     HD: smell_amount[HD],
                     TOTAL: smell_amount[TOTAL]
                 })
+        writer.writerow({
+            CATEGORIES: name,
+            ATTRIBUTES: '%d versions' % num_versions
+        })
 
 
 def parse_args():
@@ -197,4 +201,4 @@ if __name__ == "__main__":
     args = parse_args()
     version_information = read_issue_information(args.directory, args.name)
     aggregated_versions = aggregate_versions(version_information)
-    write_aggregated_versions(args.directory, args.name, aggregated_versions)
+    write_aggregated_versions(args.directory, args.name, aggregated_versions, len(version_information))

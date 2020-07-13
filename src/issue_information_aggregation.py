@@ -11,7 +11,7 @@ DONE = 'Done'
 FINISHED = [FIXED, DONE]
 SHA = 'commit_sha'
 VERSION_DATE = 'version_date'
-DATE_FORMATTER_JIRA = '%Y-%m-%dT%H:%M:%S.%f%z'
+DATE_FORMATTER_JIRA = '%Y-%m-%d %H:%M:%S'
 ISSUE_KEY = 'issue_key'
 SUMMARY = 'issue_summary'
 ISSUE_TYPE = 'issue_type'
@@ -20,11 +20,14 @@ CD = 'total_cyclic_dependencies'
 UD = 'total_unstable_dependencies'
 HD = 'total_hublike_dependencies'
 PRIORITY = 'priority'
+PRIORITY_VERSION = 'priority_by_version'
 ASSIGNEE = 'assignee'
+ASSIGNEE_VERSION = 'assignee_version'
 CREATED_AT = 'created_at'
 RESOLVED_AT = 'resolution_date'
 UPDATED = 'updated_at'
-ISSUE_TYPES = 'issue_types'
+ISSUE_TYPES = 'issue_types_by_smells'
+ISSUE_TYPES_VERSION = 'issue_types_by_version'
 TOTAL = 'total'
 ATTRIBUTES = 'attributes'
 CATEGORIES = 'categories'
@@ -66,8 +69,11 @@ def get_smell_dict():
 def aggregate_versions(version_information):
     aggregated = dict()
     aggregated[ISSUE_TYPES] = dict()
+    aggregated[ISSUE_TYPES_VERSION] = dict()
     aggregated[PRIORITY] = dict()
+    aggregated[PRIORITY_VERSION] = dict()
     aggregated[ASSIGNEE] = dict()
+    aggregated[ASSIGNEE_VERSION] = dict()
     for version in version_information:
         issue_type = version.issue_type
         priority = version.priority
@@ -76,7 +82,7 @@ def aggregate_versions(version_information):
         cyclic_dependency = version.get_number_cyclic_dependencies()
         unstable_dependency = version.get_number_unstable_dependencies()
         hublike_dependency = version.get_number_hublike_dependencies()
-        # aggregate issue types
+        # aggregate issue types by smells
         if issue_type in aggregated[ISSUE_TYPES]:
             aggregated[ISSUE_TYPES][issue_type][TOTAL] += total
             aggregated[ISSUE_TYPES][issue_type][CD] += cyclic_dependency
@@ -88,7 +94,19 @@ def aggregate_versions(version_information):
             aggregated[ISSUE_TYPES][issue_type][CD] += cyclic_dependency
             aggregated[ISSUE_TYPES][issue_type][UD] += unstable_dependency
             aggregated[ISSUE_TYPES][issue_type][HD] += hublike_dependency
-        # aggregate priority
+        # aggregate issue types by smelly version
+        if issue_type in aggregated[ISSUE_TYPES_VERSION]:
+            aggregated[ISSUE_TYPES_VERSION][issue_type][TOTAL] += 1 if total > 0 else 0
+            aggregated[ISSUE_TYPES_VERSION][issue_type][CD] += 1 if cyclic_dependency > 0 else 0
+            aggregated[ISSUE_TYPES_VERSION][issue_type][UD] += 1 if unstable_dependency > 0 else 0
+            aggregated[ISSUE_TYPES_VERSION][issue_type][HD] += 1 if hublike_dependency > 0 else 0
+        else:
+            aggregated[ISSUE_TYPES_VERSION][issue_type] = get_smell_dict()
+            aggregated[ISSUE_TYPES_VERSION][issue_type][TOTAL] += 1 if total > 0 else 0
+            aggregated[ISSUE_TYPES_VERSION][issue_type][CD] += 1 if cyclic_dependency > 0 else 0
+            aggregated[ISSUE_TYPES_VERSION][issue_type][UD] += 1 if unstable_dependency > 0 else 0
+            aggregated[ISSUE_TYPES_VERSION][issue_type][HD] += 1 if hublike_dependency > 0 else 0
+        # aggregate priority by smells
         if priority in aggregated[PRIORITY]:
             aggregated[PRIORITY][priority][TOTAL] += total
             aggregated[PRIORITY][priority][CD] += cyclic_dependency
@@ -100,7 +118,19 @@ def aggregate_versions(version_information):
             aggregated[PRIORITY][priority][CD] += cyclic_dependency
             aggregated[PRIORITY][priority][UD] += unstable_dependency
             aggregated[PRIORITY][priority][HD] += hublike_dependency
-        # aggregate assignee
+        # aggregate priority by smelly version
+        if priority in aggregated[PRIORITY_VERSION]:
+            aggregated[PRIORITY_VERSION][priority][TOTAL] += 1 if total > 0 else 0
+            aggregated[PRIORITY_VERSION][priority][CD] += 1 if cyclic_dependency > 0 else 0
+            aggregated[PRIORITY_VERSION][priority][UD] += 1 if unstable_dependency > 0 else 0
+            aggregated[PRIORITY_VERSION][priority][HD] += 1 if hublike_dependency > 0 else 0
+        else:
+            aggregated[PRIORITY_VERSION][priority] = get_smell_dict()
+            aggregated[PRIORITY_VERSION][priority][TOTAL] += 1 if total > 0 else 0
+            aggregated[PRIORITY_VERSION][priority][CD] += 1 if cyclic_dependency > 0 else 0
+            aggregated[PRIORITY_VERSION][priority][UD] += 1 if unstable_dependency > 0 else 0
+            aggregated[PRIORITY_VERSION][priority][HD] += 1 if hublike_dependency > 0 else 0
+        # aggregate assignee by smells
         if assignee in aggregated[ASSIGNEE]:
             aggregated[ASSIGNEE][assignee][TOTAL] += total
             aggregated[ASSIGNEE][assignee][CD] += cyclic_dependency
@@ -112,6 +142,18 @@ def aggregate_versions(version_information):
             aggregated[ASSIGNEE][assignee][CD] += cyclic_dependency
             aggregated[ASSIGNEE][assignee][UD] += unstable_dependency
             aggregated[ASSIGNEE][assignee][HD] += hublike_dependency
+        # aggregate assignee by version
+        if assignee in aggregated[ASSIGNEE_VERSION]:
+            aggregated[ASSIGNEE_VERSION][assignee][TOTAL] += 1 if total > 0 else 0
+            aggregated[ASSIGNEE_VERSION][assignee][CD] += 1 if cyclic_dependency > 0 else 0
+            aggregated[ASSIGNEE_VERSION][assignee][UD] += 1 if unstable_dependency > 0 else 0
+            aggregated[ASSIGNEE_VERSION][assignee][HD] += 1 if hublike_dependency > 0 else 0
+        else:
+            aggregated[ASSIGNEE_VERSION][assignee] = get_smell_dict()
+            aggregated[ASSIGNEE_VERSION][assignee][TOTAL] += 1 if total > 0 else 0
+            aggregated[ASSIGNEE_VERSION][assignee][CD] += 1 if cyclic_dependency > 0 else 0
+            aggregated[ASSIGNEE_VERSION][assignee][UD] += 1 if unstable_dependency > 0 else 0
+            aggregated[ASSIGNEE_VERSION][assignee][HD] += 1 if hublike_dependency > 0 else 0
     return aggregated
 
 

@@ -32,6 +32,7 @@ TOTAL = 'total'
 ATTRIBUTES = 'attributes'
 CATEGORIES = 'categories'
 COMMENTS = 'comments'
+ID = 'id'
 
 
 def read_issue_information(directory, name):
@@ -48,11 +49,11 @@ def read_issue_information(directory, name):
             version.issue_type = row[ISSUE_TYPE]
             version.priority = row[PRIORITY]
             version.assignee = row[ASSIGNEE]
-            version.resolution_time = row
+            version.resolution_time = row[RESOLUTION_TIME]
             version.issue_created = row[CREATED_AT]
             version.issue_resolution_date = row[RESOLVED_AT]
             version.issue_updated = row[UPDATED]
-            version.comments = row[COMMENTS]
+            version.comments = int(row[COMMENTS])
             versions.append(version)
     return versions
 
@@ -185,6 +186,50 @@ def write_aggregated_versions(directory, name, versions, num_versions):
         })
 
 
+def write_resolved_issues_by_comment_count(directory, name, versions):
+    versions.sort(key=lambda v: v.comments, reverse=True)
+    with open('%s/%s_resolved_issues_by_comments.csv' % (directory, name), mode='w') as csv_file:
+        fieldnames = [ID,
+                      COMMENTS,
+                      ISSUE_KEY,
+                      SUMMARY,
+                      ISSUE_TYPE,
+                      ASSIGNEE,
+                      PRIORITY,
+                      RESOLUTION_TIME,
+                      TOTAL,
+                      CD,
+                      UD,
+                      HD,
+                      VERSION_DATE,
+                      SHA,
+                      CREATED_AT,
+                      RESOLVED_AT,
+                      UPDATED]
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for idx, version in enumerate(versions):
+            writer.writerow({
+                ID: idx,
+                COMMENTS: version.comments,
+                ISSUE_KEY: version.issue_key,
+                SUMMARY: version.issue_summary,
+                ISSUE_TYPE: version.issue_type,
+                ASSIGNEE: version.assignee,
+                PRIORITY: version.priority,
+                RESOLUTION_TIME: version.resolution_time,
+                TOTAL: version.get_total_smell_number(),
+                CD: version.get_number_cyclic_dependencies(),
+                UD: version.get_number_unstable_dependencies(),
+                HD: version.get_number_hublike_dependencies(),
+                VERSION_DATE: version.date,
+                SHA: version.commit_sha,
+                CREATED_AT: version.issue_created,
+                RESOLVED_AT: version.issue_resolution_date,
+                UPDATED: version.issue_updated
+            })
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -202,3 +247,4 @@ if __name__ == "__main__":
     version_information = read_issue_information(args.directory, args.name)
     aggregated_versions = aggregate_versions(version_information)
     write_aggregated_versions(args.directory, args.name, aggregated_versions, len(version_information))
+    write_resolved_issues_by_comment_count(args.directory, args.name, version_information)

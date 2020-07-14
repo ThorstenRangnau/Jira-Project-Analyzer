@@ -11,7 +11,9 @@ DONE = 'Done'
 FINISHED = [FIXED, DONE]
 SHA = 'commit_sha'
 VERSION_DATE = 'version_date'
-DATE_FORMATTER_JIRA = '%Y-%m-%d %H:%M:%S'
+DATE_FORMATTER = '%Y-%m-%d %H:%M:%S'
+DATE_FORMATTER_IMPORT = '%d/%m/%Y, %H:%M:%S'
+DATE_FORMATTER_PARAM = '%Y-%m-%d'
 ISSUE_KEY = 'issue_key'
 SUMMARY = 'issue_summary'
 ISSUE_TYPE = 'issue_type'
@@ -42,14 +44,20 @@ UD_HD = 'unstable_hublike_dependency'
 CD_UD_HD = 'cyclic_unstable_hublike_dependency'
 
 
-def read_issue_information(directory, name):
+def read_issue_information(directory, name, start_at):
+    start = datetime.strptime(start_at, DATE_FORMATTER_PARAM) if start_at is not None else None
+    print('start is %s' % start)
     versions = list()
     with open("%s/%s_issue_information.csv" % (directory, name), mode="r") as csv_file:
         for row in csv.DictReader(csv_file):
             if row[STATUS] not in FINISHED:
                 continue
+            if start is not None and \
+                    datetime.strptime(row[CREATED_AT], DATE_FORMATTER_IMPORT) < start:
+                print("Discard this version because it is out of scope of the analysis")
+                continue
             version = Version(row[SHA])
-            version.date = datetime.strptime(row[VERSION_DATE], DATE_FORMATTER_JIRA)
+            version.date = datetime.strptime(row[VERSION_DATE], DATE_FORMATTER)
             version.issue_key = row[ISSUE_KEY]
             version.issue_summary = row[SUMMARY]
             version.add_smell_numbers(row[CD], row[UD], row[HD])
@@ -136,6 +144,13 @@ def aggregate_versions(versions):
     aggregated[ISSUE_TYPES_VERSION] = dict()
     aggregated_total_smells[PRIORITY] = dict()
     aggregated[PRIORITY_VERSION] = dict()
+    cd_list = list()
+    ud_list = list()
+    hd_list = list()
+    cd_ud_list = list()
+    cd_hd_list = list()
+    ud_hd_list = list()
+    cd_ud_hd_list = list()
     for version in versions:
         issue_type = version.issue_type
         priority = version.priority
@@ -161,18 +176,25 @@ def aggregate_versions(versions):
             aggregated[ISSUE_TYPES_VERSION][issue_type][TOTAL] += 1 if total > 0 else 0
             if is_version_only_cd(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_CD] += 1
+                cd_list.append(version)
             elif is_version_only_ud(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_UD] += 1
+                ud_list.append(version)
             elif is_version_only_hd(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_HD] += 1
+                hd_list.append(version)
             elif is_version_cd_ud(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][CD_UD] += 1
+                cd_ud_list.append(version)
             elif is_version_cd_hd(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][CD_HD] += 1
+                cd_hd_list.append(version)
             elif is_version_ud_hd(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][UD_HD] += 1
+                ud_hd_list.append(version)
             elif is_version_cd_ud_hd(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][CD_UD_HD] += 1
+                cd_ud_hd_list.append(version)
             else:
                 print('This is technically impossible but %s nailed it!' % version.issue_key)
         else:
@@ -180,18 +202,25 @@ def aggregate_versions(versions):
             aggregated[ISSUE_TYPES_VERSION][issue_type][TOTAL] += 1 if total > 0 else 0
             if is_version_only_cd(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_CD] += 1
+                cd_list.append(version)
             elif is_version_only_ud(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_UD] += 1
+                ud_list.append(version)
             elif is_version_only_hd(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_HD] += 1
+                hd_list.append(version)
             elif is_version_cd_ud(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][CD_UD] += 1
+                cd_ud_list.append(version)
             elif is_version_cd_hd(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][CD_HD] += 1
+                cd_hd_list.append(version)
             elif is_version_ud_hd(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][UD_HD] += 1
+                ud_hd_list.append(version)
             elif is_version_cd_ud_hd(version):
                 aggregated[ISSUE_TYPES_VERSION][issue_type][CD_UD_HD] += 1
+                cd_ud_hd_list.append(version)
             else:
                 print('This is technically impossible but %s nailed it!' % version.issue_key)
         # aggregate priority by smells
@@ -245,11 +274,20 @@ def aggregate_versions(versions):
                 aggregated[PRIORITY_VERSION][priority][CD_UD_HD] += 1
             else:
                 print('This is technically impossible but %s nailed it!' % version.issue_key)
-    return aggregated, aggregated_total_smells
+    return aggregated, aggregated_total_smells, {
+        ONLY_CD: cd_list,
+        ONLY_UD: ud_list,
+        ONLY_HD: hd_list,
+        CD_UD: cd_ud_list,
+        CD_HD: cd_hd_list,
+        UD_HD: ud_hd_list,
+        CD_UD_HD: cd_ud_hd_list
+    }
 
 
 def write_aggregated_versions(directory, name, versions, versions_total_smells, num_versions):
-    with open('%s/%s_aggregated_issue_information_by_versions_and_total_smells.csv' % (directory, name), mode='w') as csv_file:
+    with open('%s/%s_aggregated_issue_information_by_versions_and_total_smells.csv' % (directory, name),
+              mode='w') as csv_file:
         fieldnames = [CATEGORIES,
                       ATTRIBUTES,
                       ONLY_CD,
@@ -304,10 +342,8 @@ def write_aggregated_versions(directory, name, versions, versions_total_smells, 
                 })
 
 
-
-def write_resolved_issues_by_comment_count(directory, name, versions):
-    versions.sort(key=lambda v: v.comments, reverse=True)
-    with open('%s/%s_resolved_issues_by_comments.csv' % (directory, name), mode='w') as csv_file:
+def write_resolved_issues_by_comment_count(directory, name, versions_by_category):
+    with open('%s/%s_resolved_issues_by_comments_by_category.csv' % (directory, name), mode='w') as csv_file:
         fieldnames = [ID,
                       COMMENTS,
                       ISSUE_KEY,
@@ -327,26 +363,32 @@ def write_resolved_issues_by_comment_count(directory, name, versions):
                       UPDATED]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
-        for idx, version in enumerate(versions):
+        for category, versions in versions_by_category.items():
+            writer.writerow({})
             writer.writerow({
-                ID: idx,
-                COMMENTS: version.comments,
-                ISSUE_KEY: version.issue_key,
-                SUMMARY: version.issue_summary,
-                ISSUE_TYPE: version.issue_type,
-                ASSIGNEE: version.assignee,
-                PRIORITY: version.priority,
-                RESOLUTION_TIME: version.resolution_time,
-                TOTAL: version.get_total_smell_number(),
-                CD: version.get_number_cyclic_dependencies(),
-                UD: version.get_number_unstable_dependencies(),
-                HD: version.get_number_hublike_dependencies(),
-                VERSION_DATE: version.date,
-                SHA: version.commit_sha,
-                CREATED_AT: version.issue_created,
-                RESOLVED_AT: version.issue_resolution_date,
-                UPDATED: version.issue_updated
+                ID: category
             })
+            versions.sort(key=lambda v: v.comments, reverse=True)
+            for idx, version in enumerate(versions):
+                writer.writerow({
+                    ID: idx,
+                    COMMENTS: version.comments,
+                    ISSUE_KEY: version.issue_key,
+                    SUMMARY: version.issue_summary,
+                    ISSUE_TYPE: version.issue_type,
+                    ASSIGNEE: version.assignee,
+                    PRIORITY: version.priority,
+                    RESOLUTION_TIME: version.resolution_time,
+                    TOTAL: version.get_total_smell_number(),
+                    CD: version.get_number_cyclic_dependencies(),
+                    UD: version.get_number_unstable_dependencies(),
+                    HD: version.get_number_hublike_dependencies(),
+                    VERSION_DATE: version.date,
+                    SHA: version.commit_sha,
+                    CREATED_AT: version.issue_created,
+                    RESOLVED_AT: version.issue_resolution_date,
+                    UPDATED: version.issue_updated
+                })
 
 
 def parse_args():
@@ -358,12 +400,17 @@ def parse_args():
         "-n", dest="name", required=True,
         help="Project name"
     )
+    parser.add_argument(
+        "-s", dest="start_at", required=False, default=None,
+        help="Considers only package level architectural smells!")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    version_information = read_issue_information(args.directory, args.name)
-    aggregated_versions, aggregated_versions_total_smells = aggregate_versions(version_information)
-    write_aggregated_versions(args.directory, args.name, aggregated_versions, aggregated_versions_total_smells, len(version_information))
-    # write_resolved_issues_by_comment_count(args.directory, args.name, version_information)
+    version_information = read_issue_information(args.directory, args.name, args.start_at)
+    aggregated_versions, aggregated_versions_total_smells, categorized_versions = aggregate_versions(
+        version_information)
+    write_aggregated_versions(args.directory, args.name, aggregated_versions, aggregated_versions_total_smells,
+                              len(version_information))
+    write_resolved_issues_by_comment_count(args.directory, args.name, categorized_versions)

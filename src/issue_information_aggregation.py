@@ -33,6 +33,13 @@ ATTRIBUTES = 'attributes'
 CATEGORIES = 'categories'
 COMMENTS = 'comments'
 ID = 'id'
+ONLY_CD = 'cyclic_dependency'
+ONLY_UD = 'unstable_dependency'
+ONLY_HD = 'hublike_dependency'
+CD_UD = 'cyclic_unstable_dependency'
+CD_HD = 'cyclic_hublike_dependency'
+UD_HD = 'unstable_hublike_dependency'
+CD_UD_HD = 'cyclic_unstable_hublike_dependency'
 
 
 def read_issue_information(directory, name):
@@ -67,7 +74,62 @@ def get_smell_dict():
     }
 
 
-def aggregate_versions(version_information):
+def get_smelly_version_dict():
+    return {
+        TOTAL: 0,
+        ONLY_CD: 0,
+        ONLY_UD: 0,
+        ONLY_HD: 0,
+        CD_UD: 0,
+        CD_HD: 0,
+        UD_HD: 0,
+        CD_UD_HD: 0
+    }
+
+
+def is_version_only_cd(version):
+    return version.get_number_cyclic_dependencies() > 0 \
+           and version.get_number_unstable_dependencies() == 0 \
+           and version.get_number_hublike_dependencies() == 0
+
+
+def is_version_only_ud(version):
+    return version.get_number_cyclic_dependencies() == 0 \
+           and version.get_number_unstable_dependencies() > 0 \
+           and version.get_number_hublike_dependencies() == 0
+
+
+def is_version_only_hd(version):
+    return version.get_number_cyclic_dependencies() == 0 \
+           and version.get_number_unstable_dependencies() == 0 \
+           and version.get_number_hublike_dependencies() > 0
+
+
+def is_version_cd_ud(version):
+    return version.get_number_cyclic_dependencies() > 0 \
+           and version.get_number_unstable_dependencies() > 0 \
+           and version.get_number_hublike_dependencies() == 0
+
+
+def is_version_cd_hd(version):
+    return version.get_number_cyclic_dependencies() > 0 \
+           and version.get_number_unstable_dependencies() == 0 \
+           and version.get_number_hublike_dependencies() > 0
+
+
+def is_version_ud_hd(version):
+    return version.get_number_cyclic_dependencies() == 0 \
+           and version.get_number_unstable_dependencies() > 0 \
+           and version.get_number_hublike_dependencies() > 0
+
+
+def is_version_cd_ud_hd(version):
+    return version.get_number_cyclic_dependencies() > 0 \
+           and version.get_number_unstable_dependencies() > 0 \
+           and version.get_number_hublike_dependencies() > 0
+
+
+def aggregate_versions(versions):
     aggregated = dict()
     aggregated[ISSUE_TYPES] = dict()
     aggregated[ISSUE_TYPES_VERSION] = dict()
@@ -75,7 +137,7 @@ def aggregate_versions(version_information):
     aggregated[PRIORITY_VERSION] = dict()
     aggregated[ASSIGNEE] = dict()
     aggregated[ASSIGNEE_VERSION] = dict()
-    for version in version_information:
+    for version in versions:
         issue_type = version.issue_type
         priority = version.priority
         assignee = version.assignee
@@ -84,87 +146,131 @@ def aggregate_versions(version_information):
         unstable_dependency = version.get_number_unstable_dependencies()
         hublike_dependency = version.get_number_hublike_dependencies()
         # aggregate issue types by smells
-        if issue_type in aggregated[ISSUE_TYPES]:
-            aggregated[ISSUE_TYPES][issue_type][TOTAL] += total
-            aggregated[ISSUE_TYPES][issue_type][CD] += cyclic_dependency
-            aggregated[ISSUE_TYPES][issue_type][UD] += unstable_dependency
-            aggregated[ISSUE_TYPES][issue_type][HD] += hublike_dependency
-        else:
-            aggregated[ISSUE_TYPES][issue_type] = get_smell_dict()
-            aggregated[ISSUE_TYPES][issue_type][TOTAL] += total
-            aggregated[ISSUE_TYPES][issue_type][CD] += cyclic_dependency
-            aggregated[ISSUE_TYPES][issue_type][UD] += unstable_dependency
-            aggregated[ISSUE_TYPES][issue_type][HD] += hublike_dependency
+        # if issue_type in aggregated[ISSUE_TYPES]:
+        #     aggregated[ISSUE_TYPES][issue_type][TOTAL] += total
+        #     aggregated[ISSUE_TYPES][issue_type][CD] += cyclic_dependency
+        #     aggregated[ISSUE_TYPES][issue_type][UD] += unstable_dependency
+        #     aggregated[ISSUE_TYPES][issue_type][HD] += hublike_dependency
+        # else:
+        #     aggregated[ISSUE_TYPES][issue_type] = get_smell_dict()
+        #     aggregated[ISSUE_TYPES][issue_type][TOTAL] += total
+        #     aggregated[ISSUE_TYPES][issue_type][CD] += cyclic_dependency
+        #     aggregated[ISSUE_TYPES][issue_type][UD] += unstable_dependency
+        #     aggregated[ISSUE_TYPES][issue_type][HD] += hublike_dependency
         # aggregate issue types by smelly version
+
         if issue_type in aggregated[ISSUE_TYPES_VERSION]:
             aggregated[ISSUE_TYPES_VERSION][issue_type][TOTAL] += 1 if total > 0 else 0
-            aggregated[ISSUE_TYPES_VERSION][issue_type][CD] += 1 if cyclic_dependency > 0 else 0
-            aggregated[ISSUE_TYPES_VERSION][issue_type][UD] += 1 if unstable_dependency > 0 else 0
-            aggregated[ISSUE_TYPES_VERSION][issue_type][HD] += 1 if hublike_dependency > 0 else 0
+            if is_version_only_cd(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_CD] += 1
+            elif is_version_only_ud(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_UD] += 1
+            elif is_version_only_hd(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_HD] += 1
+            elif is_version_cd_ud(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][CD_UD] += 1
+            elif is_version_cd_hd(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][CD_HD] += 1
+            elif is_version_ud_hd(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][UD_HD] += 1
+            elif is_version_cd_ud_hd(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][CD_UD_HD] += 1
+            else:
+                print('This is technically impossible but %s nailed it!' % version.issue_key)
         else:
-            aggregated[ISSUE_TYPES_VERSION][issue_type] = get_smell_dict()
+            aggregated[ISSUE_TYPES_VERSION][issue_type] = get_smelly_version_dict()
             aggregated[ISSUE_TYPES_VERSION][issue_type][TOTAL] += 1 if total > 0 else 0
-            aggregated[ISSUE_TYPES_VERSION][issue_type][CD] += 1 if cyclic_dependency > 0 else 0
-            aggregated[ISSUE_TYPES_VERSION][issue_type][UD] += 1 if unstable_dependency > 0 else 0
-            aggregated[ISSUE_TYPES_VERSION][issue_type][HD] += 1 if hublike_dependency > 0 else 0
+            if is_version_only_cd(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_CD] += 1
+            elif is_version_only_ud(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_UD] += 1
+            elif is_version_only_hd(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][ONLY_HD] += 1
+            elif is_version_cd_ud(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][CD_UD] += 1
+            elif is_version_cd_hd(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][CD_HD] += 1
+            elif is_version_ud_hd(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][UD_HD] += 1
+            elif is_version_cd_ud_hd(version):
+                aggregated[ISSUE_TYPES_VERSION][issue_type][CD_UD_HD] += 1
+            else:
+                print('This is technically impossible but %s nailed it!' % version.issue_key)
+
+        # if issue_type in aggregated[ISSUE_TYPES_VERSION]:
+        #     aggregated[ISSUE_TYPES_VERSION][issue_type][TOTAL] += 1 if total > 0 else 0
+        #     aggregated[ISSUE_TYPES_VERSION][issue_type][CD] += 1 if cyclic_dependency > 0 else 0
+        #     aggregated[ISSUE_TYPES_VERSION][issue_type][UD] += 1 if unstable_dependency > 0 else 0
+        #     aggregated[ISSUE_TYPES_VERSION][issue_type][HD] += 1 if hublike_dependency > 0 else 0
+        # else:
+        #     aggregated[ISSUE_TYPES_VERSION][issue_type] = get_smell_dict()
+        #     aggregated[ISSUE_TYPES_VERSION][issue_type][TOTAL] += 1 if total > 0 else 0
+        #     aggregated[ISSUE_TYPES_VERSION][issue_type][CD] += 1 if cyclic_dependency > 0 else 0
+        #     aggregated[ISSUE_TYPES_VERSION][issue_type][UD] += 1 if unstable_dependency > 0 else 0
+        #     aggregated[ISSUE_TYPES_VERSION][issue_type][HD] += 1 if hublike_dependency > 0 else 0
+
         # aggregate priority by smells
-        if priority in aggregated[PRIORITY]:
-            aggregated[PRIORITY][priority][TOTAL] += total
-            aggregated[PRIORITY][priority][CD] += cyclic_dependency
-            aggregated[PRIORITY][priority][UD] += unstable_dependency
-            aggregated[PRIORITY][priority][HD] += hublike_dependency
-        else:
-            aggregated[PRIORITY][priority] = get_smell_dict()
-            aggregated[PRIORITY][priority][TOTAL] += total
-            aggregated[PRIORITY][priority][CD] += cyclic_dependency
-            aggregated[PRIORITY][priority][UD] += unstable_dependency
-            aggregated[PRIORITY][priority][HD] += hublike_dependency
-        # aggregate priority by smelly version
-        if priority in aggregated[PRIORITY_VERSION]:
-            aggregated[PRIORITY_VERSION][priority][TOTAL] += 1 if total > 0 else 0
-            aggregated[PRIORITY_VERSION][priority][CD] += 1 if cyclic_dependency > 0 else 0
-            aggregated[PRIORITY_VERSION][priority][UD] += 1 if unstable_dependency > 0 else 0
-            aggregated[PRIORITY_VERSION][priority][HD] += 1 if hublike_dependency > 0 else 0
-        else:
-            aggregated[PRIORITY_VERSION][priority] = get_smell_dict()
-            aggregated[PRIORITY_VERSION][priority][TOTAL] += 1 if total > 0 else 0
-            aggregated[PRIORITY_VERSION][priority][CD] += 1 if cyclic_dependency > 0 else 0
-            aggregated[PRIORITY_VERSION][priority][UD] += 1 if unstable_dependency > 0 else 0
-            aggregated[PRIORITY_VERSION][priority][HD] += 1 if hublike_dependency > 0 else 0
-        # aggregate assignee by smells
-        if assignee in aggregated[ASSIGNEE]:
-            aggregated[ASSIGNEE][assignee][TOTAL] += total
-            aggregated[ASSIGNEE][assignee][CD] += cyclic_dependency
-            aggregated[ASSIGNEE][assignee][UD] += unstable_dependency
-            aggregated[ASSIGNEE][assignee][HD] += hublike_dependency
-        else:
-            aggregated[ASSIGNEE][assignee] = get_smell_dict()
-            aggregated[ASSIGNEE][assignee][TOTAL] += total
-            aggregated[ASSIGNEE][assignee][CD] += cyclic_dependency
-            aggregated[ASSIGNEE][assignee][UD] += unstable_dependency
-            aggregated[ASSIGNEE][assignee][HD] += hublike_dependency
-        # aggregate assignee by version
-        if assignee in aggregated[ASSIGNEE_VERSION]:
-            aggregated[ASSIGNEE_VERSION][assignee][TOTAL] += 1 if total > 0 else 0
-            aggregated[ASSIGNEE_VERSION][assignee][CD] += 1 if cyclic_dependency > 0 else 0
-            aggregated[ASSIGNEE_VERSION][assignee][UD] += 1 if unstable_dependency > 0 else 0
-            aggregated[ASSIGNEE_VERSION][assignee][HD] += 1 if hublike_dependency > 0 else 0
-        else:
-            aggregated[ASSIGNEE_VERSION][assignee] = get_smell_dict()
-            aggregated[ASSIGNEE_VERSION][assignee][TOTAL] += 1 if total > 0 else 0
-            aggregated[ASSIGNEE_VERSION][assignee][CD] += 1 if cyclic_dependency > 0 else 0
-            aggregated[ASSIGNEE_VERSION][assignee][UD] += 1 if unstable_dependency > 0 else 0
-            aggregated[ASSIGNEE_VERSION][assignee][HD] += 1 if hublike_dependency > 0 else 0
+        # if priority in aggregated[PRIORITY]:
+        #     aggregated[PRIORITY][priority][TOTAL] += total
+        #     aggregated[PRIORITY][priority][CD] += cyclic_dependency
+        #     aggregated[PRIORITY][priority][UD] += unstable_dependency
+        #     aggregated[PRIORITY][priority][HD] += hublike_dependency
+        # else:
+        #     aggregated[PRIORITY][priority] = get_smell_dict()
+        #     aggregated[PRIORITY][priority][TOTAL] += total
+        #     aggregated[PRIORITY][priority][CD] += cyclic_dependency
+        #     aggregated[PRIORITY][priority][UD] += unstable_dependency
+        #     aggregated[PRIORITY][priority][HD] += hublike_dependency
+        # # aggregate priority by smelly version
+        # if priority in aggregated[PRIORITY_VERSION]:
+        #     aggregated[PRIORITY_VERSION][priority][TOTAL] += 1 if total > 0 else 0
+        #     aggregated[PRIORITY_VERSION][priority][CD] += 1 if cyclic_dependency > 0 else 0
+        #     aggregated[PRIORITY_VERSION][priority][UD] += 1 if unstable_dependency > 0 else 0
+        #     aggregated[PRIORITY_VERSION][priority][HD] += 1 if hublike_dependency > 0 else 0
+        # else:
+        #     aggregated[PRIORITY_VERSION][priority] = get_smell_dict()
+        #     aggregated[PRIORITY_VERSION][priority][TOTAL] += 1 if total > 0 else 0
+        #     aggregated[PRIORITY_VERSION][priority][CD] += 1 if cyclic_dependency > 0 else 0
+        #     aggregated[PRIORITY_VERSION][priority][UD] += 1 if unstable_dependency > 0 else 0
+        #     aggregated[PRIORITY_VERSION][priority][HD] += 1 if hublike_dependency > 0 else 0
+        # # aggregate assignee by smells
+        # if assignee in aggregated[ASSIGNEE]:
+        #     aggregated[ASSIGNEE][assignee][TOTAL] += total
+        #     aggregated[ASSIGNEE][assignee][CD] += cyclic_dependency
+        #     aggregated[ASSIGNEE][assignee][UD] += unstable_dependency
+        #     aggregated[ASSIGNEE][assignee][HD] += hublike_dependency
+        # else:
+        #     aggregated[ASSIGNEE][assignee] = get_smell_dict()
+        #     aggregated[ASSIGNEE][assignee][TOTAL] += total
+        #     aggregated[ASSIGNEE][assignee][CD] += cyclic_dependency
+        #     aggregated[ASSIGNEE][assignee][UD] += unstable_dependency
+        #     aggregated[ASSIGNEE][assignee][HD] += hublike_dependency
+        # # aggregate assignee by version
+        # if assignee in aggregated[ASSIGNEE_VERSION]:
+        #     aggregated[ASSIGNEE_VERSION][assignee][TOTAL] += 1 if total > 0 else 0
+        #     aggregated[ASSIGNEE_VERSION][assignee][CD] += 1 if cyclic_dependency > 0 else 0
+        #     aggregated[ASSIGNEE_VERSION][assignee][UD] += 1 if unstable_dependency > 0 else 0
+        #     aggregated[ASSIGNEE_VERSION][assignee][HD] += 1 if hublike_dependency > 0 else 0
+        # else:
+        #     aggregated[ASSIGNEE_VERSION][assignee] = get_smell_dict()
+        #     aggregated[ASSIGNEE_VERSION][assignee][TOTAL] += 1 if total > 0 else 0
+        #     aggregated[ASSIGNEE_VERSION][assignee][CD] += 1 if cyclic_dependency > 0 else 0
+        #     aggregated[ASSIGNEE_VERSION][assignee][UD] += 1 if unstable_dependency > 0 else 0
+        #     aggregated[ASSIGNEE_VERSION][assignee][HD] += 1 if hublike_dependency > 0 else 0
     return aggregated
 
 
 def write_aggregated_versions(directory, name, versions, num_versions):
-    with open('%s/%s_aggregated_issue_information.csv' % (directory, name), mode='w') as csv_file:
+    with open('%s/%s_aggregated_issue_information_test.csv' % (directory, name), mode='w') as csv_file:
         fieldnames = [CATEGORIES,
                       ATTRIBUTES,
-                      CD,
-                      UD,
-                      HD,
+                      ONLY_CD,
+                      ONLY_UD,
+                      ONLY_HD,
+                      CD_UD,
+                      CD_HD,
+                      UD_HD,
+                      CD_UD_HD,
                       TOTAL]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
@@ -175,9 +281,13 @@ def write_aggregated_versions(directory, name, versions, num_versions):
             for category, smell_amount in categories.items():
                 writer.writerow({
                     ATTRIBUTES: category,
-                    CD: smell_amount[CD],
-                    UD: smell_amount[UD],
-                    HD: smell_amount[HD],
+                    ONLY_CD: smell_amount[ONLY_CD],
+                    ONLY_UD: smell_amount[ONLY_UD],
+                    ONLY_HD: smell_amount[ONLY_HD],
+                    CD_UD: smell_amount[CD_UD],
+                    CD_HD: smell_amount[CD_HD],
+                    UD_HD: smell_amount[UD_HD],
+                    CD_UD_HD: smell_amount[CD_UD_HD],
                     TOTAL: smell_amount[TOTAL]
                 })
         writer.writerow({
@@ -247,4 +357,4 @@ if __name__ == "__main__":
     version_information = read_issue_information(args.directory, args.name)
     aggregated_versions = aggregate_versions(version_information)
     write_aggregated_versions(args.directory, args.name, aggregated_versions, len(version_information))
-    write_resolved_issues_by_comment_count(args.directory, args.name, version_information)
+    # write_resolved_issues_by_comment_count(args.directory, args.name, version_information)

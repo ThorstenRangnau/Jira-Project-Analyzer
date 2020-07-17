@@ -22,7 +22,7 @@ class Smell(object):
                  affected_elements,
                  size):
         self.unique_smell_id = unique_smell_id
-        self.birth_day = datetime.strptime(birth_day, DATE_FORMATTER)
+        self.birth_day = birth_day if isinstance(birth_day, datetime) else datetime.strptime(birth_day, DATE_FORMATTER)
         self.version = version
         self.affected_elements = extract_participating_elements(affected_elements)
         self.size = size

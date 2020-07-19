@@ -117,11 +117,15 @@ class Version(object):
         self.resolution_status = None
         self.issue_summary = None
         self.comments = 0
+        self.committer = None
+        self.author = None
 
-    def add_commit_information(self, issue_key, message, url):
+    def add_commit_information(self, issue_key, message, url, committer, author):
         self.issue_key = issue_key
         self.message = message
         self.url = url
+        self.committer = committer
+        self.author = author
 
     def add_smell_numbers(self, cyclic_dependencies, unstable_dependencies, hublike_dependencies):
         self.cyclic_dependencies = int(cyclic_dependencies)

@@ -17,6 +17,8 @@ ID = 'id'
 NO_COMMENTS_URL = "No comments url"
 NO_COMMIT_MESSAGE = "No commit message"
 NO_ISSUE_KEY = "No issue key"
+NO_COMMITTER = "No committer"
+NO_AUTHOR = "No author"
 
 
 def resolve_issue_keys(issue_keys):
@@ -45,7 +47,9 @@ def extract_commit_information(commit, issue_key):
     commit_message = commit.commit.message if commit is not None else NO_COMMIT_MESSAGE
     issue_keys = re.findall("%s-[0-9]+" % issue_key, commit_message)
     commit_url = commit.comments_url if commit is not None else NO_COMMENTS_URL
-    return set(issue_keys), commit_message, commit_url
+    committer = commit.committer if commit is not None else NO_COMMITTER
+    author = commit.author if commit is not None else NO_AUTHOR
+    return set(issue_keys), commit_message, commit_url, committer, author
 
 
 def fetch_commit_information(versions, github_repository_name, issue_key):
@@ -60,9 +64,9 @@ def fetch_commit_information(versions, github_repository_name, issue_key):
             print("Stop programme because of GitHubCommitServiceException!")
             print(e.message)
             return
-        keys, commit_message, commit_url = extract_commit_information(commit, issue_key)
+        keys, commit_message, commit_url, committer, author = extract_commit_information(commit, issue_key)
         total_issue_keys += len(keys)
-        version.add_commit_information(keys, commit_message, commit_url)
+        version.add_commit_information(keys, commit_message, commit_url, committer, author)
     coverage = (total_issue_keys / len(versions)) * 100
     return versions, coverage
 
@@ -78,7 +82,9 @@ def write_versions_to_csv(versions, output, name, percent):
                       'total_unstable_dependencies',
                       'total_hublike_dependencies',
                       'commit_message',
-                      'commit_url']
+                      'commit_url',
+                      'committer',
+                      'author']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         for idx, version in enumerate(versions):
@@ -92,7 +98,9 @@ def write_versions_to_csv(versions, output, name, percent):
                 'total_unstable_dependencies': version.get_number_unstable_dependencies(),
                 'total_hublike_dependencies': version.get_number_hublike_dependencies(),
                 'commit_message': version.message,
-                'commit_url': version.url
+                'commit_url': version.url,
+                'committer': version.committer,
+                'author': version.author
             })
 
 

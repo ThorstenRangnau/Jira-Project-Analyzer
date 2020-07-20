@@ -225,6 +225,74 @@ def write_versions_csv(directory, name, smells_sorted_by_version):
         })
 
 
+def sort_smells_by_type_and_components(types_smells):
+    smells_by_type_by_components = dict()
+    for smell_type, smells in types_smells.items():
+        smell_types = list()
+        for idx, smell in smells.items():
+            smell_types.append(smell)
+        smell_types.sort(key=lambda s: str(s.get_affected_elements()), reverse=True)
+        smells_by_type_by_components[smell_type] = smell_types
+    return smells_by_type_by_components
+
+
+def write_smells_by_component(directory, name, smells_components):
+    with open('%s/%s_filtered_smells_by_components.csv' % (directory, name), mode='w') as csv_file:
+        fieldnames = ['id',
+                      'date',
+                      'elements']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for smell_types, smells in smells_components.items():
+            writer.writerow({'id': smell_types})
+            for smell in smells:
+                writer.writerow({
+                    'id': smell.unique_smell_id,
+                    'date': smell.birth_day,
+                    'elements': smell.get_affected_elements()
+                })
+            writer.writerow({})
+
+
+def align_smell_variations_by_smell(smells):
+    origin_smell_comp_1 = origin_smell_comp_2 = None
+    variations_by_smell = dict()
+    smell_id = 0
+    for smell in smells:
+        if len(smell.get_affected_elements()) == 1:
+            continue
+        if origin_smell_comp_1 is None and origin_smell_comp_2 is None:
+            # intial phase
+            origin_smell_comp_1, origin_smell_comp_2 = smell.get_affected_elements()[0], smell.get_affected_elements()[1]
+            variations_by_smell[smell_id] = list()
+            variations_by_smell[smell_id].append(smell)
+            smell_id += 1
+            continue
+        comp_1, comp_2 = smell.get_affected_elements()[0], smell.get_affected_elements()[1]
+        if comp_1 == origin_smell_comp_1 and comp_2 == origin_smell_comp_2:
+            # same smell
+            variations_by_smell[smell_id - 1].append(smell)
+        else:
+            # new smell
+            origin_smell_comp_1, origin_smell_comp_2 = comp_1, comp_2
+            variations_by_smell[smell_id] = list()
+            variations_by_smell[smell_id].append(smell)
+            smell_id += 1
+    return variations_by_smell
+
+
+def create_smell_evolution_trees(variations_by_smell):
+    return {}
+
+
+def filter_evolved_smells(smells_components):
+    for smell_type, smells in smells_components.items():
+        variations_by_smell = align_smell_variations_by_smell(smells)
+        print('Found %d for %s smells' % (len(variations_by_smell), smell_type))
+        smell_evolution_trees = create_smell_evolution_trees(variations_by_smell)
+    return []
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -248,7 +316,16 @@ if __name__ == "__main__":
     ud = len(filtered_smells_by_type[UNSTABLE_DEPENDENCY])
     hd = len(filtered_smells_by_type[HUBLIKE_DEPENDENCY])
     print('Remaining smells: %d, cyclic: %d, unstable: %d, hublike: %d' % ((cd + ud + hd), cd, ud, hd))
-    smells_by_version = sort_smells_by_version(filtered_smells_by_type)
-    write_unique_smells_to_csv(args.directory, args.name, smells_by_version)
-    smelly_versions = convert_to_list_and_sort(smells_by_version)
-    write_versions_csv(args.directory, args.name, smelly_versions)
+
+    # sort smells and write sorted by smell type and component
+
+    smells_by_component = sort_smells_by_type_and_components(filtered_smells_by_type)
+
+    # write_smells_by_component(args.directory, args.name, smells_by_component)
+
+    filtered_smells_by_evolution = filter_evolved_smells(smells_by_component)
+
+    # smells_by_version = sort_smells_by_version(filtered_smells_by_type)
+    # write_unique_smells_to_csv(args.directory, args.name, smells_by_version)
+    # smelly_versions = convert_to_list_and_sort(smells_by_version)
+    # write_versions_csv(args.directory, args.name, smelly_versions)

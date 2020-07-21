@@ -4,6 +4,7 @@ import re
 
 from architectural_smells.smell import Version, CyclicDependency, UnstableDependency, HubLikeDependency
 from datetime import datetime
+from treelib import Node, Tree
 
 DATE = 'birth_day'
 DATE_FORMATTER_IMPORT = '%Y-%m-%d %H:%M:%S'
@@ -262,8 +263,9 @@ def align_smell_variations_by_smell(smells):
         if len(smell.get_affected_elements()) == 1:
             continue
         if origin_smell_comp_1 is None and origin_smell_comp_2 is None:
-            # intial phase
-            origin_smell_comp_1, origin_smell_comp_2 = smell.get_affected_elements()[0], smell.get_affected_elements()[1]
+            # initial loop
+            origin_smell_comp_1, origin_smell_comp_2 = smell.get_affected_elements()[0], smell.get_affected_elements()[
+                1]
             variations_by_smell[smell_id] = list()
             variations_by_smell[smell_id].append(smell)
             smell_id += 1
@@ -281,15 +283,108 @@ def align_smell_variations_by_smell(smells):
     return variations_by_smell
 
 
-def create_smell_evolution_trees(variations_by_smell):
+def find_root_smell_variation(smell_variations):
+    earliest = None
+    for smell in smell_variations:
+        if earliest is None:
+            # initial loop
+            earliest = smell
+            continue
+        if smell.birth_day < earliest.birth_day:
+            earliest = smell
+    return earliest
+
+
+def calculate_m1(smell_variation, node):
+    diff = len(smell_variation.get_affected_elements()) - len(node.data.get_affected_elements()) - 1
+
+    # print('**************************')
+    # print('Compare with %s' % node.identifier)
+    # print("New smell has: %s" % str(smell_variation.get_affected_elements()))
+    # print("%s has: %s" % (node.identifier, str(node.data.get_affected_elements())))
+    # print('The m1 value for %s is %f' % (node.identifier, abs(diff)))
+    # print('**************************')
+
+    return abs(diff)
+
+
+def coverage(smell_variation, node):
+    count = 0
+    for element in node.data.get_affected_elements():
+        if element in smell_variation.get_affected_elements():
+            count += 1
+    return count
+
+
+def calculate_m2(smell_variation, node):
+    c = coverage(smell_variation, node)
+
+    # print('The m2 value for %s is %f' % (node.identifier, c))
+
+    return c / len(node.data.get_affected_elements())
+
+
+def decide_parent_node(smell_variation, nodes):
+    m1_metrics = list()
+    for node in nodes:
+        m1_metrics.append((calculate_m1(smell_variation, node), node))
+    min_m1 = min(m1_metrics)[0]
+
+    # print('min is %d' % min_m1)
+
+    candidates = list()
+    for tuple_m1 in m1_metrics:
+        if tuple_m1[0] == min_m1:
+
+            # print('%s has min value!' % tuple_m1[1].identifier)
+
+            candidates.append(tuple_m1)
+    m2_metrics = list()
+    for candidate_tuple in candidates:
+        m2 = calculate_m2(smell_variation, candidate_tuple[1])
+        m2_metrics.append((m2, candidate_tuple[1]))
+
+        print('M2 is %f for %s' % (m2, candidate_tuple[1].identifier))
+
+    # TODO: what if m2 is same for components
+    max_tuple = max(m2_metrics, key=lambda t: t[0])
+    return max_tuple[1].identifier
+
+
+def create_smell_evolution_trees(variations_by_smell, start_at):
+    start = datetime.strptime(start_at, DATE_FORMATTER_PARAM) if start_at is not None else None
+    for smell_id, smell_variations in variations_by_smell.items():
+        root = find_root_smell_variation(smell_variations)
+        if root is None:
+            # no smell detected at all
+            continue
+        if start_at is not None and root.birth_day < start_at:
+            # smell is too old
+            continue
+        # create tree
+        tree = Tree()
+        # set root as root node for tree
+        tree.create_node('Root', 'root', data=root)
+        # remove root from smell list to ignore it and sort remaining list by date
+        smell_variations.remove(root)
+        smell_variations.sort(key=lambda s: s.birth_day)
+        for idx, smell_variation in enumerate(smell_variations):
+            smell_identifier = str(idx + 1)
+            print('############ Parse Smell %s incurred at %s ##############' % (smell_identifier, smell_variation.birth_day))
+            nodes = tree.all_nodes()
+            parent_name = decide_parent_node(smell_variation, nodes)
+            tree.create_node('Smell-%s' % smell_identifier, 'smell_%s' % smell_identifier, parent=parent_name,
+                             data=smell_variation)
+        tree.show()
     return {}
 
 
-def filter_evolved_smells(smells_components):
+def filter_evolved_smells(smells_components, start_at):
     for smell_type, smells in smells_components.items():
         variations_by_smell = align_smell_variations_by_smell(smells)
         print('Found %d for %s smells' % (len(variations_by_smell), smell_type))
-        smell_evolution_trees = create_smell_evolution_trees(variations_by_smell)
+        # check when the smell was created here!
+        smell_evolution_trees = create_smell_evolution_trees(variations_by_smell, start_at)
     return []
 
 
@@ -309,7 +404,7 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    smells_by_type, tot, discarded, instances = import_smells(args.directory, args.name, args.start_at)
+    smells_by_type, tot, discarded, instances = import_smells(args.directory, args.name)
     print("Total: %d, Discarded: %d, Imported: %d" % (tot, discarded, instances))
     filtered_smells_by_type = filter_duplicated_smells(smells_by_type)
     cd = len(filtered_smells_by_type[CYCLIC_DEPENDENCY])
@@ -323,7 +418,7 @@ if __name__ == "__main__":
 
     # write_smells_by_component(args.directory, args.name, smells_by_component)
 
-    filtered_smells_by_evolution = filter_evolved_smells(smells_by_component)
+    filtered_smells_by_evolution = filter_evolved_smells(smells_by_component, args.start_at)
 
     # smells_by_version = sort_smells_by_version(filtered_smells_by_type)
     # write_unique_smells_to_csv(args.directory, args.name, smells_by_version)

@@ -2,3 +2,4 @@ PyGithub
 jira
 openpyxl
 matplotlib
+treelib

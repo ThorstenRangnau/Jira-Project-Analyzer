@@ -33,4 +33,5 @@ smells = {
     ]
 }
 
-create_smell_evolution_trees(smells, None)
+smell_id_tree = create_smell_evolution_trees(smells, None)
+print(smell_id_tree)

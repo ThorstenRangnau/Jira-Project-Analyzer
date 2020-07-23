@@ -6,6 +6,8 @@ from architectural_smells.smell import Version, CyclicDependency, UnstableDepend
 from datetime import datetime
 from treelib import Node, Tree
 
+from issue_information_aggregation import read_issue_information
+
 DATE = 'birth_day'
 DATE_FORMATTER_IMPORT = '%Y-%m-%d %H:%M:%S'
 DATE_FORMATTER_PARAM = '%Y-%m-%d'
@@ -26,6 +28,8 @@ AFFECTED_CLASS_RATIO = 'affected_class_ratio'
 CD_KEY = 'CYCLIC_DEPENDENCY'
 UD_KEY = 'UNSTABLE_DEPENDENCY'
 HD_KEY = 'HUBLIKE_DEPENDENCY'
+M1 = 'm1'
+M2 = 'm2'
 
 
 def create_smell(row):
@@ -45,8 +49,7 @@ def create_smell(row):
                                  row[AFFECTED_CLASS_RATIO])
 
 
-def import_smells(directory, name, start_at):
-    start = datetime.strptime(start_at, DATE_FORMATTER_PARAM) if start_at is not None else None
+def import_smells(directory, name):
     total = discarded_smells_by_date = smell_instances = 0
     smells = dict()
     smells[CYCLIC_DEPENDENCY] = list()
@@ -55,10 +58,6 @@ def import_smells(directory, name, start_at):
     with open('%s/%s_smells_by_version.csv' % (directory, name), mode="r") as csv_file:
         for row in csv.DictReader(csv_file):
             total += 1
-            if start is not None and \
-                    datetime.strptime(row[BIRTH_DAY], DATE_FORMATTER_IMPORT) < start:
-                discarded_smells_by_date += 1
-                continue
             smell_instances += 1
             smell = create_smell(row)
             if isinstance(smell, CyclicDependency):
@@ -256,6 +255,10 @@ def write_smells_by_component(directory, name, smells_components):
 
 
 def align_smell_variations_by_smell(smells):
+    '''
+    :param smells:
+    :return: { smell_id: --> [list of smell variations] }
+    '''
     origin_smell_comp_1 = origin_smell_comp_2 = None
     variations_by_smell = dict()
     smell_id = 0
@@ -297,14 +300,6 @@ def find_root_smell_variation(smell_variations):
 
 def calculate_m1(smell_variation, node):
     diff = len(smell_variation.get_affected_elements()) - len(node.data.get_affected_elements()) - 1
-
-    # print('**************************')
-    # print('Compare with %s' % node.identifier)
-    # print("New smell has: %s" % str(smell_variation.get_affected_elements()))
-    # print("%s has: %s" % (node.identifier, str(node.data.get_affected_elements())))
-    # print('The m1 value for %s is %f' % (node.identifier, abs(diff)))
-    # print('**************************')
-
     return abs(diff)
 
 
@@ -318,47 +313,84 @@ def coverage(smell_variation, node):
 
 def calculate_m2(smell_variation, node):
     c = coverage(smell_variation, node)
-
-    # print('The m2 value for %s is %f' % (node.identifier, c))
-
     return c / len(node.data.get_affected_elements())
+
+
+def compare_metrics(metrics_by_node, min_m1, max_m2):
+    both_best = list()
+    one_best = list()
+    for identifier, metrics in metrics_by_node.items():
+        m1 = m2 = False
+        if metrics[M1] == min_m1:
+            m1 = True
+        if metrics[M2] == max_m2:
+            m2 = True
+        if m1 and m2:
+            # is in both the best
+            both_best.append(identifier)
+        elif m1 or m2:
+            one_best.append(identifier)
+    if len(both_best) > 1:
+        oldest = None
+        oldest_node = None
+        for node_name in both_best:
+            date = metrics_by_node[node_name][BIRTH_DAY]
+            if oldest is None:
+                # initial loop
+                oldest = date
+                oldest_node = node_name
+                continue
+            if date < oldest:
+                oldest = date
+                oldest_node = node_name
+        return oldest_node
+    if len(both_best) == 1:
+        return both_best[0]
+    if len(one_best) > 1:
+        youngest = None
+        youngest_node = None
+        for node in one_best:
+            birth_date = metrics_by_node[node][BIRTH_DAY]
+            if youngest is None:
+                # initial loop
+                youngest = birth_date
+                youngest_node = node
+                continue
+            if youngest < birth_date:
+                youngest = birth_date
+                youngest_node = node
+        return youngest_node
+    if len(one_best) == 1:
+        return one_best[0]
 
 
 def decide_parent_node(smell_variation, nodes):
     m1_metrics = list()
-    for node in nodes:
-        m1_metrics.append((calculate_m1(smell_variation, node), node))
-    min_m1 = min(m1_metrics)[0]
-
-    # print('min is %d' % min_m1)
-
-    candidates = list()
-    for tuple_m1 in m1_metrics:
-        if tuple_m1[0] == min_m1:
-
-            # print('%s has min value!' % tuple_m1[1].identifier)
-
-            candidates.append(tuple_m1)
     m2_metrics = list()
-    for candidate_tuple in candidates:
-        m2 = calculate_m2(smell_variation, candidate_tuple[1])
-        m2_metrics.append((m2, candidate_tuple[1]))
-
-        print('M2 is %f for %s' % (m2, candidate_tuple[1].identifier))
-
-    # TODO: what if m2 is same for components
-    max_tuple = max(m2_metrics, key=lambda t: t[0])
-    return max_tuple[1].identifier
+    metrics_by_node = dict()
+    for node in nodes:
+        m1 = calculate_m1(smell_variation, node)
+        m2 = calculate_m2(smell_variation, node)
+        m1_metrics.append(m1)
+        m2_metrics.append(m2)
+        metrics_by_node[node.identifier] = dict()
+        metrics_by_node[node.identifier][M1] = m1
+        metrics_by_node[node.identifier][M2] = m2
+        metrics_by_node[node.identifier][BIRTH_DAY] = node.data.birth_day
+    min_m1 = min(m1_metrics)
+    max_m2 = max(m2_metrics)
+    return compare_metrics(metrics_by_node, min_m1, max_m2)
 
 
 def create_smell_evolution_trees(variations_by_smell, start_at):
+    smell_ids_tree = dict()
     start = datetime.strptime(start_at, DATE_FORMATTER_PARAM) if start_at is not None else None
     for smell_id, smell_variations in variations_by_smell.items():
         root = find_root_smell_variation(smell_variations)
         if root is None:
             # no smell detected at all
             continue
-        if start_at is not None and root.birth_day < start_at:
+        if start is not None and root.birth_day < start:
             # smell is too old
             continue
         # create tree
@@ -370,22 +402,89 @@ def create_smell_evolution_trees(variations_by_smell, start_at):
         smell_variations.sort(key=lambda s: s.birth_day)
         for idx, smell_variation in enumerate(smell_variations):
             smell_identifier = str(idx + 1)
-            print('############ Parse Smell %s incurred at %s ##############' % (smell_identifier, smell_variation.birth_day))
             nodes = tree.all_nodes()
             parent_name = decide_parent_node(smell_variation, nodes)
             tree.create_node('Smell-%s' % smell_identifier, 'smell_%s' % smell_identifier, parent=parent_name,
                              data=smell_variation)
-        tree.show()
-    return {}
+        # tree.show()
+        smell_ids_tree[smell_id] = tree
+    return smell_ids_tree
 
 
 def filter_evolved_smells(smells_components, start_at):
+    smell_type_trees = dict()
     for smell_type, smells in smells_components.items():
         variations_by_smell = align_smell_variations_by_smell(smells)
-        print('Found %d for %s smells' % (len(variations_by_smell), smell_type))
+        print('Without date filtering: %d %s instances' % (len(variations_by_smell), smell_type))
         # check when the smell was created here!
-        smell_evolution_trees = create_smell_evolution_trees(variations_by_smell, start_at)
-    return []
+        trees_by_smell_id = create_smell_evolution_trees(variations_by_smell, start_at)
+        print('Smell type %s - %d smells' % (smell_type, len(trees_by_smell_id)))
+        smell_type_trees[smell_type] = trees_by_smell_id
+    return smell_type_trees
+
+
+def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_issues):
+    with open('%s/%s_smell_tree.csv' % (directory, name), mode='w') as csv_file:
+        fieldnames = ['smell_id',
+                      'root',
+                      'node_name',
+                      'parent',
+                      'issue_key',
+                      'commit_sha',
+                      'birth_date',
+                      'issue_type',
+                      'components']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for smell_type, tree_by_id in smell_type_smell_id_tree.items():
+            # some space to separate smell types
+            writer.writerow({})
+            writer.writerow({
+                'smell_id': smell_type
+            })
+            writer.writerow({})
+            # write smells by smell id
+            for smell_id, tree in tree_by_id.items():
+                # for root
+                root = tree.get_node('root')
+                root_smell = root.data
+                writer.writerow({
+                    'smell_id': smell_id,
+                    'root': root.tag,
+                    'node_name': ' ',
+                    'parent': ' ',
+                    'issue_key': commit_sha_issues[root_smell.version].issue_key if root_smell.version in commit_sha_issues else "No key",
+                    'commit_sha': root_smell.version,
+                    'birth_date': root_smell.birth_day,
+                    'issue_type': commit_sha_issues[root_smell.version].issue_type if root_smell.version in commit_sha_issues else "No Type",
+                    'components': root_smell.get_affected_elements()
+                })
+                writer.writerow({})
+                for node in tree.all_nodes():
+                    if node.identifier == 'root':
+                        continue
+                    node_smell = node.data
+                    writer.writerow({
+                        'smell_id': smell_id,
+                        'root': ' ',
+                        'node_name': node.tag,
+                        'parent': node.bpointer,
+                        'issue_key': commit_sha_issues[node_smell.version].issue_key if node_smell.version in commit_sha_issues else "No key",
+                        'commit_sha': node_smell.version,
+                        'birth_date': node_smell.birth_day,
+                        'issue_type': commit_sha_issues[node_smell.version].issue_type if node_smell.version in commit_sha_issues else "No type",
+                        'components': node_smell.get_affected_elements()
+                    })
+                writer.writerow({})
+
+
+def transform_to_dict(issues):
+    commit_issue = dict()
+    for version in issues:
+        if version.commit_sha in commit_issue:
+            print('duplicated commit')
+        commit_issue[version.commit_sha] = version
+    return commit_issue
 
 
 def parse_args():
@@ -411,14 +510,13 @@ if __name__ == "__main__":
     ud = len(filtered_smells_by_type[UNSTABLE_DEPENDENCY])
     hd = len(filtered_smells_by_type[HUBLIKE_DEPENDENCY])
     print('Remaining smells: %d, cyclic: %d, unstable: %d, hublike: %d' % ((cd + ud + hd), cd, ud, hd))
-
     # sort smells and write sorted by smell type and component
-
     smells_by_component = sort_smells_by_type_and_components(filtered_smells_by_type)
-
     # write_smells_by_component(args.directory, args.name, smells_by_component)
-
-    filtered_smells_by_evolution = filter_evolved_smells(smells_by_component, args.start_at)
+    trees_by_smell_type = filter_evolved_smells(smells_by_component, args.start_at)
+    issue_information = read_issue_information(args.directory, args.name, None)
+    issues_by_key = transform_to_dict(issue_information)
+    write_smell_evolution(args.directory, args.name, trees_by_smell_type, issues_by_key)
 
     # smells_by_version = sort_smells_by_version(filtered_smells_by_type)
     # write_unique_smells_to_csv(args.directory, args.name, smells_by_version)

@@ -531,9 +531,9 @@ def transform_to_dict(issues):
 
 
 def write_tree_to_file(trees, directory, name):
-    tree = trees['cyclic_dependency'][77]
-    tree.show()
-    tree.save2file('%s/%s_tree_77.txt' % (directory, name))
+    for smell_type, trees in trees.items():
+        for smell_id, tree in trees.items():
+            tree.save2file('%s/trees/%s/%s_tree_%s.txt' % (directory, smell_type, name, smell_id))
 
 
 def import_gaps_for_commit(directory):

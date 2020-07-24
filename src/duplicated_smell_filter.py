@@ -425,18 +425,23 @@ def filter_evolved_smells(smells_components, start_at):
 
 def extract_issue_information(version_list):
     if version_list is None:
-        return 'No key', 'No type'
+        return 'No key', 'No type', 'No priority', 0
     if len(version_list) == 1:
-        return version_list[0].issue_key, version_list[0].issue_type
-    issue_key = issue_type = None
+        return version_list[0].issue_key, version_list[0].issue_type, version_list[0].priority, version_list[0].comments
+    issue_key = issue_type = issue_priority = None
+    issue_comments = 0
     for version in version_list:
         if issue_key is None and issue_type is None:
             issue_key = version.issue_key
             issue_type = version.issue_type
+            issue_priority = version.priority
+            issue_comments += int(version.comments)
             continue
         issue_key += ', %s' % version.issue_key
         issue_type += ', %s' % version.issue_type
-    return issue_key, issue_type
+        issue_priority += ', %s' % version.priority
+        issue_comments += int(version.comments)
+    return issue_key, issue_type, issue_priority, issue_comments
 
 
 def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_issues, commit_gaps):
@@ -451,6 +456,8 @@ def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_
                       'gap',
                       'birth_date',
                       'issue_type',
+                      'issue_priority',
+                      'issue_comments',
                       'components']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
@@ -469,7 +476,7 @@ def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_
                 root_smell = root.data
                 if commit_gaps[root_smell.version] > 0:
                     root_gap += 1
-                root_issue_key, root_issue_type = extract_issue_information(commit_sha_issues[root_smell.version] if root_smell.version in commit_sha_issues else None)
+                root_issue_key, root_issue_type, root_issue_priority, root_issue_comments = extract_issue_information(commit_sha_issues[root_smell.version] if root_smell.version in commit_sha_issues else None)
                 writer.writerow({
                     'smell_id': smell_id,
                     'root': root.tag,
@@ -481,6 +488,8 @@ def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_
                     'gap': commit_gaps[root_smell.version] if root_smell.version in commit_gaps else 'unknown',
                     'birth_date': root_smell.birth_day,
                     'issue_type': root_issue_type,
+                    'issue_priority': root_issue_priority,
+                    'issue_comments': root_issue_comments,
                     'components': root_smell.get_affected_elements()
                 })
                 writer.writerow({})
@@ -490,7 +499,7 @@ def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_
                     node_smell = node.data
                     if commit_gaps[node_smell.version] > 0:
                         node_gap += 1
-                    node_issue_key, node_issue_type = extract_issue_information(
+                    node_issue_key, node_issue_type, node_issue_priority, node_issue_comments = extract_issue_information(
                         commit_sha_issues[node_smell.version] if node_smell.version in commit_sha_issues else None)
                     writer.writerow({
                         'smell_id': smell_id,
@@ -503,6 +512,8 @@ def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_
                         'gap': commit_gaps[node_smell.version] if node_smell.version in commit_gaps else 'unknown',
                         'birth_date': node_smell.birth_day,
                         'issue_type': node_issue_type,
+                        'issue_priority': node_issue_priority,
+                        'issue_comments': node_issue_comments,
                         'components': node_smell.get_affected_elements()
                     })
                 writer.writerow({})

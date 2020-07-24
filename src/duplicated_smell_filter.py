@@ -423,19 +423,38 @@ def filter_evolved_smells(smells_components, start_at):
     return smell_type_trees
 
 
-def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_issues):
+def extract_issue_information(version_list):
+    if version_list is None:
+        return 'No key', 'No type'
+    if len(version_list) == 1:
+        return version_list[0].issue_key, version_list[0].issue_type
+    issue_key = issue_type = None
+    for version in version_list:
+        if issue_key is None and issue_type is None:
+            issue_key = version.issue_key
+            issue_type = version.issue_type
+            continue
+        issue_key += ', %s' % version.issue_key
+        issue_type += ', %s' % version.issue_type
+    return issue_key, issue_type
+
+
+def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_issues, commit_gaps):
     with open('%s/%s_smell_tree.csv' % (directory, name), mode='w') as csv_file:
         fieldnames = ['smell_id',
                       'root',
                       'node_name',
                       'parent',
                       'issue_key',
+                      'split_point',
                       'commit_sha',
+                      'gap',
                       'birth_date',
                       'issue_type',
                       'components']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
+        root_gap = node_gap = 0
         for smell_type, tree_by_id in smell_type_smell_id_tree.items():
             # some space to separate smell types
             writer.writerow({})
@@ -448,15 +467,20 @@ def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_
                 # for root
                 root = tree.get_node('root')
                 root_smell = root.data
+                if commit_gaps[root_smell.version] > 0:
+                    root_gap += 1
+                root_issue_key, root_issue_type = extract_issue_information(commit_sha_issues[root_smell.version] if root_smell.version in commit_sha_issues else None)
                 writer.writerow({
                     'smell_id': smell_id,
                     'root': root.tag,
                     'node_name': ' ',
                     'parent': ' ',
-                    'issue_key': commit_sha_issues[root_smell.version].issue_key if root_smell.version in commit_sha_issues else "No key",
+                    'issue_key': root_issue_key,
+                    'split_point': 'split point' if len(tree.children(root.identifier)) > 1 else ' ',
                     'commit_sha': root_smell.version,
+                    'gap': commit_gaps[root_smell.version] if root_smell.version in commit_gaps else 'unknown',
                     'birth_date': root_smell.birth_day,
-                    'issue_type': commit_sha_issues[root_smell.version].issue_type if root_smell.version in commit_sha_issues else "No Type",
+                    'issue_type': root_issue_type,
                     'components': root_smell.get_affected_elements()
                 })
                 writer.writerow({})
@@ -464,27 +488,67 @@ def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_
                     if node.identifier == 'root':
                         continue
                     node_smell = node.data
+                    if commit_gaps[node_smell.version] > 0:
+                        node_gap += 1
+                    node_issue_key, node_issue_type = extract_issue_information(
+                        commit_sha_issues[node_smell.version] if node_smell.version in commit_sha_issues else None)
                     writer.writerow({
                         'smell_id': smell_id,
                         'root': ' ',
                         'node_name': node.tag,
-                        'parent': node.bpointer,
-                        'issue_key': commit_sha_issues[node_smell.version].issue_key if node_smell.version in commit_sha_issues else "No key",
+                        'parent': tree.parent(node.identifier).tag,
+                        'issue_key': node_issue_key,
+                        'split_point': 'split point' if len(tree.children(node.identifier)) > 1 else ' ',
                         'commit_sha': node_smell.version,
+                        'gap': commit_gaps[node_smell.version] if node_smell.version in commit_gaps else 'unknown',
                         'birth_date': node_smell.birth_day,
-                        'issue_type': commit_sha_issues[node_smell.version].issue_type if node_smell.version in commit_sha_issues else "No type",
+                        'issue_type': node_issue_type,
                         'components': node_smell.get_affected_elements()
                     })
                 writer.writerow({})
+                writer.writerow({})
+            writer.writerow({})
+            writer.writerow({
+                'smell_id': 'Root gaps:',
+                'root': root_gap,
+                'node_name': 'Node gaps',
+                'parent': node_gap
+            })
 
 
 def transform_to_dict(issues):
     commit_issue = dict()
+    multiple_key_commits = 0
     for version in issues:
-        if version.commit_sha in commit_issue:
-            print('duplicated commit')
-        commit_issue[version.commit_sha] = version
+        if version.commit_sha not in commit_issue:
+            commit_issue[version.commit_sha] = list()
+            commit_issue[version.commit_sha].append(version)
+        else:
+            commit_issue[version.commit_sha].append(version)
+            multiple_key_commits += 1
+    print('There are %d commits with multiple versions.' % multiple_key_commits)
     return commit_issue
+
+
+def write_tree_to_file(trees, directory, name):
+    tree = trees['cyclic_dependency'][77]
+    tree.show()
+    tree.save2file('%s/%s_tree_77.txt' % (directory, name))
+
+
+def import_gaps_for_commit(directory):
+    commit_gaps = dict()
+    with open('%s/TajoIssuesSortedDateRefined.csv' % directory, mode="r") as csv_file:
+        for row in csv.DictReader(csv_file, delimiter=';'):
+            commit = row['commit']
+            gap_str = row['gap']
+            try:
+                gap = int(gap_str)
+            except ValueError:
+                print('gap cannot be converted')
+                continue
+            commit_gaps[commit] = gap
+    return commit_gaps
 
 
 def parse_args():
@@ -516,7 +580,9 @@ if __name__ == "__main__":
     trees_by_smell_type = filter_evolved_smells(smells_by_component, args.start_at)
     issue_information = read_issue_information(args.directory, args.name, None)
     issues_by_key = transform_to_dict(issue_information)
-    write_smell_evolution(args.directory, args.name, trees_by_smell_type, issues_by_key)
+    gaps_by_commit = import_gaps_for_commit(args.directory)
+    write_smell_evolution(args.directory, args.name, trees_by_smell_type, issues_by_key, gaps_by_commit)
+    write_tree_to_file(trees_by_smell_type, args.directory, args.name)
 
     # smells_by_version = sort_smells_by_version(filtered_smells_by_type)
     # write_unique_smells_to_csv(args.directory, args.name, smells_by_version)

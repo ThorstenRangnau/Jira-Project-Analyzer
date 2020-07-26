@@ -6,6 +6,22 @@ UNSTABLE_DEPENDENCY = 'unstable_dependency'
 HUBLIKE_DEPENDENCY = 'hublike_dependency'
 ISSUE_KEY = 'issue_key'
 ISSUE_TYPE = 'issue_type'
+ISSUE_PRIORITY = 'issue_priority'
+
+
+def extract_issue_type(row):
+    if row['sub-task_parent_issue']:
+        print('I, %s, have the sub-task parent %s' % (row['smell_id'], row['sub-task_parent']))
+        return row['sub-task_parent']
+    else:
+        return row['more_likely_issue_type'] if row['more_likely_issue_type'] else row['issue_type']
+
+
+def extract_issue_priority(row):
+    if row['sub-task_parent_issue']:
+        return row['sub-task_parent_priority']
+    else:
+        return row['more_likely_issue_priority'] if row['more_likely_issue_priority'] else row['issue_priority']
 
 
 def extract_smell_information(row):
@@ -15,7 +31,8 @@ def extract_smell_information(row):
     #     print('original issue: %s \t length: \t %d' % (row['issue_type'], len(row['issue_type'])))
     return {
         ISSUE_KEY: row['more_likely_issue_key'] if row['more_likely_issue_key'] else row['issue_key'],
-        ISSUE_TYPE: row['more_likely_issue_type'] if row['more_likely_issue_type'] else row['issue_type']
+        ISSUE_TYPE: extract_issue_type(row),
+        ISSUE_PRIORITY: extract_issue_priority(row)
     }
 
 
@@ -40,12 +57,26 @@ def import_smell_roots_by_type(directory, name):
             if row['smell_id'] == HUBLIKE_DEPENDENCY:
                 unstable_dependencies = False
                 hublike_dependencies = True
+                continue
             smell_id = row['smell_id']
             if cyclic_dependencies and row['root'] == 'Root':
-                print('Row is --> %s - with smell id: \t %s \t with issue_key \t %s' % (row['root'], row['smell_id'], row['issue_key']))
+                print(
+                    'Row is --> %s - with smell id: \t %s \t with issue_key \t %s \t with type \t %s \t with priority \t %s' % (
+                    row['root'], row['smell_id'], row[ISSUE_KEY], row[ISSUE_TYPE], row[ISSUE_PRIORITY]))
                 # print('parsing smell id \t --> \t %s' % row['smell_id'])
                 smells[CYCLIC_DEPENDENCY][smell_id] = extract_smell_information(row)
+            if unstable_dependencies and row['root'] == 'Root':
+                print(
+                    'Row is --> %s - with smell id: \t %s \t with issue_key \t %s \t with type \t %s \t with priority \t %s' % (
+                        row['root'], row['smell_id'], row[ISSUE_KEY], row[ISSUE_TYPE], row[ISSUE_PRIORITY]))
+                smells[UNSTABLE_DEPENDENCY][smell_id] = extract_smell_information(row)
+            if hublike_dependencies and row['root'] == 'Root':
+                print(
+                    'Row is --> %s - with smell id: \t %s \t with issue_key \t %s \t with type \t %s \t with priority \t %s' % (
+                        row['root'], row['smell_id'], row[ISSUE_KEY], row[ISSUE_TYPE], row[ISSUE_PRIORITY]))
+                smells[HUBLIKE_DEPENDENCY][smell_id] = extract_smell_information(row)
         return smells
+
 
 def parse_args():
     parser = argparse.ArgumentParser()

@@ -20,7 +20,7 @@ def extract_smell_information(row):
 
 
 def import_smell_roots_by_type(directory, name):
-    with open('%s/tajo_smell_tree-cd-ud-cd-resolved-commits.csv' % directory, mode="r") as csv_file:
+    with open('%s/tajo_smell_tree-cd-ud-cd-resolved-commits-excluded.csv' % directory, mode="r") as csv_file:
         smells = {
             CYCLIC_DEPENDENCY: dict(),
             UNSTABLE_DEPENDENCY: dict(),
@@ -28,6 +28,8 @@ def import_smell_roots_by_type(directory, name):
         }
         cyclic_dependencies = unstable_dependencies = hublike_dependencies = False
         for row in csv.DictReader(csv_file, delimiter=';'):
+            if row['ignore'] == 'yes':
+                continue
             if row['smell_id'] == CYCLIC_DEPENDENCY:
                 cyclic_dependencies = True
                 continue

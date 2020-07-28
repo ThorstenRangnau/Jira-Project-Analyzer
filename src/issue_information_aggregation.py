@@ -286,7 +286,7 @@ def aggregate_versions(versions):
 
 
 def write_aggregated_versions(directory, name, versions, versions_total_smells, num_versions):
-    with open('%s/%s_aggregated_issue_information_by_versions_and_total_smells.csv' % (directory, name),
+    with open('%s/%s_aggregated_issue_information_roots.csv' % (directory, name),
               mode='w') as csv_file:
         fieldnames = [CATEGORIES,
                       ATTRIBUTES,

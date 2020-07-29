@@ -2,11 +2,11 @@
 #SBATCH --time=00:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --job-name=clean_master_tika
+#SBATCH --job-name=find_gap_tika
 #SBATCH --mem=5GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=t.rangnau@student.rug.nl
-#SBATCH --output=job-%j-clean_master_tika.log
+#SBATCH --output=job-%j-find_gap_tika.log
 #SBATCH --partition=regular
 
 # 5960 graph files and 4704 afterwards

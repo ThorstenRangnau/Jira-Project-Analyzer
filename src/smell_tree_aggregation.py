@@ -60,7 +60,7 @@ def extract_smell_information(row, s_type):
 
 
 def import_smell_roots_by_type(directory, name):
-    with open('%s/tajo_smell_tree-cd-ud-cd-resolved-commits-excluded.csv' % directory, mode="r") as csv_file:
+    with open('%s/%s_smell_tree.csv' % (directory, name), mode="r") as csv_file:
         smells = {
             CYCLIC_DEPENDENCY: dict(),
             UNSTABLE_DEPENDENCY: dict(),

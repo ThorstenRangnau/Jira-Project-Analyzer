@@ -461,6 +461,29 @@ def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_
                       'issue_priority',
                       'issue_comments',
                       'components']
+        # fieldnames = ['smell_id',
+        #               'ignore',
+        #               'root',
+        #               'node_name',
+        #               'parent',
+        #               'issue_key',
+        #               'more_likely_issue_key',
+        #               'sub-task_parent_issue',
+        #               'split_point',
+        #               'commit_sha',
+        #               'more_likely_commit',
+        #               'gap',
+        #               'birth_date',
+        #               'new_birth_date',
+        #               'issue_type',
+        #               'more_likely_issue_type',
+        #               'sub-task_parent',
+        #               'issue_priority',
+        #               'more_likely_issue_priority',
+        #               'sub-task_parent_priority',
+        #               'issue_comments',
+        #               'more_likely_comments',
+        #               'components']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         root_gap = node_gap = 0
@@ -494,6 +517,31 @@ def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_
                     'issue_comments': root_issue_comments,
                     'components': root_smell.get_affected_elements()
                 })
+                # writer.writerow({
+                #     'smell_id': smell_id,
+                #     'ignore': ' ',
+                #     'root': root.tag,
+                #     'node_name': ' ',
+                #     'parent': ' ',
+                #     'issue_key': root_issue_key,
+                #     'more_likely_issue_key': ' ',
+                #     'sub-task_parent_issue': ' ',
+                #     'split_point': 'split point' if len(tree.children(root.identifier)) > 1 else ' ',
+                #     'commit_sha': root_smell.version,
+                #     'more_likely_commit': ' ',
+                #     'gap': commit_gaps[root_smell.version] if root_smell.version in commit_gaps else 'unknown',
+                #     'birth_date': root_smell.birth_day,
+                #     'new_birth_date': ' ',
+                #     'issue_type': root_issue_type,
+                #     'more_likely_issue_type': ' ',
+                #     'sub-task_parent': ' ',
+                #     'issue_priority': root_issue_priority,
+                #     'more_likely_issue_priority': ' ',
+                #     'sub-task_parent_priority': ' ',
+                #     'issue_comments': root_issue_comments,
+                #     'more_likely_comments': ' ',
+                #     'components': root_smell.get_affected_elements()
+                # })
                 writer.writerow({})
                 for node in tree.all_nodes():
                     if node.identifier == 'root':
@@ -518,6 +566,31 @@ def write_smell_evolution(directory, name, smell_type_smell_id_tree, commit_sha_
                         'issue_comments': node_issue_comments,
                         'components': node_smell.get_affected_elements()
                     })
+                    # writer.writerow({
+                    #     'smell_id': smell_id,
+                    #     'ignore': ' ',
+                    #     'root': ' ',
+                    #     'node_name': node.tag,
+                    #     'parent': tree.parent(node.identifier).tag,
+                    #     'issue_key': node_issue_key,
+                    #     'more_likely_issue_key': ' ',
+                    #     'sub-task_parent_issue': ' ',
+                    #     'split_point': 'split point' if len(tree.children(node.identifier)) > 1 else ' ',
+                    #     'commit_sha': node_smell.version,
+                    #     'more_likely_commit': ' ',
+                    #     'gap': commit_gaps[node_smell.version] if node_smell.version in commit_gaps else 'unknown',
+                    #     'birth_date': node_smell.birth_day,
+                    #     'new_birth_date': ' ',
+                    #     'issue_type': node_issue_type,
+                    #     'more_likely_issue_type': ' ',
+                    #     'sub-task_parent': ' ',
+                    #     'issue_priority': node_issue_priority,
+                    #     'more_likely_issue_priority': ' ',
+                    #     'sub-task_parent_priority': ' ',
+                    #     'issue_comments': node_issue_comments,
+                    #     'more_likely_comments': ' ',
+                    #     'components': node_smell.get_affected_elements()
+                    # })
                 writer.writerow({})
                 writer.writerow({})
             writer.writerow({})

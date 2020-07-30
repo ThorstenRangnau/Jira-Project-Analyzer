@@ -85,7 +85,6 @@ def plot_histogram(versions):
     # plt.plot(dates, values)
     # plt.gcf().autofmt_xdate()
     # plt.show()
-
     #
     # # generate some random data (approximately over 5 years)
     # data = [float(random.randint(1271517521, 1429197513)) for _ in range(1000)]

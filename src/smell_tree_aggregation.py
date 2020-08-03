@@ -29,6 +29,8 @@ CD_UD_HD = 'cyclic_unstable_hublike_dependency'
 CD = 'total_cyclic_dependencies'
 UD = 'total_unstable_dependencies'
 HD = 'total_hublike_dependencies'
+COMMIT = 'commit_sha'
+MORE_LIKELY_COMMIT_SHA = 'more_likely_commit'
 
 
 def extract_issue_type(row):
@@ -55,7 +57,8 @@ def extract_smell_information(row, s_type):
         ISSUE_KEY: row['more_likely_issue_key'] if row['more_likely_issue_key'] else row['issue_key'],
         ISSUE_TYPE: extract_issue_type(row),
         ISSUE_PRIORITY: extract_issue_priority(row),
-        SMELL_TYPE: s_type
+        SMELL_TYPE: s_type,
+        COMMIT: row[MORE_LIKELY_COMMIT_SHA] if row[MORE_LIKELY_COMMIT_SHA] else row[COMMIT]
     }
 
 

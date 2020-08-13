@@ -1,6 +1,8 @@
 import argparse
 import csv
 
+from datetime import datetime
+
 CYCLIC_DEPENDENCY = 'cyclic_dependency'
 UNSTABLE_DEPENDENCY = 'unstable_dependency'
 HUBLIKE_DEPENDENCY = 'hublike_dependency'
@@ -10,6 +12,8 @@ EXPANSION = 'expansion'
 START = 'start'
 END = 'end'
 BIRTH_DAY = 'birth_date'
+DATE_FORMATTER_IMPORT = '%Y-%m-%d %H:%M:%S'
+DURATION = 'duration'
 
 
 def get_smell_dict():
@@ -18,7 +22,8 @@ def get_smell_dict():
         SPLITTING: 0,
         EXPANSION: 0,
         START: None,
-        END: None
+        END: None,
+        DURATION: None
     }
 
 
@@ -57,6 +62,14 @@ def import_smell_trees(directory, name):
     return smells
 
 
+def get_month_duration(end, start):
+    if end is None:
+        return 0
+    date_end = datetime.strptime(end, DATE_FORMATTER_IMPORT)
+    date_start = datetime.strptime(start, DATE_FORMATTER_IMPORT)
+    return (date_end.year - date_start.year) * 12 + date_end.month - date_start.month
+
+
 def write_smell_evolution(directory, name, smells_by_type):
     with open('%s/%s_smell_evolution.csv' % (directory, name), mode='w') as csv_file:
         fieldnames = ['smell_type',
@@ -65,7 +78,8 @@ def write_smell_evolution(directory, name, smells_by_type):
                       SPLITTING,
                       EXPANSION,
                       START,
-                      END]
+                      END,
+                      DURATION]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         for smell_type, smell_evolutions in smells_by_type.items():
@@ -77,7 +91,8 @@ def write_smell_evolution(directory, name, smells_by_type):
                     SPLITTING: smell_evolution[SPLITTING],
                     EXPANSION: smell_evolution[EXPANSION],
                     START: smell_evolution[START],
-                    END: smell_evolution[END]
+                    END: smell_evolution[END] if smell_evolution[END] is not None else smell_evolution[START],
+                    DURATION: get_month_duration(smell_evolution[END], smell_evolution[START])
                 })
 
 def parse_args():

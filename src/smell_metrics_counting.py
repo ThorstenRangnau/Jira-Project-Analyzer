@@ -17,6 +17,7 @@ DATE_FORMATTER_IMPORT = '%Y-%m-%d %H:%M:%S'
 DURATION = 'duration'
 NUMBER_COMP_FIRST_VARIATION = 'number_comp_first_var'
 NUMBER_COMP_LARGEST_VARIATION = 'number_comp_largest_var'
+NUMBER_COMP_SMALLEST_VARIATION = 'number_comp_smallest_var'
 NUMBER_COMP_LAST_VARIATION = 'number_comp_last_var'
 SHRINKING = 'shrinking'
 SHRINK_BELOW_FIRST = 'shrink_below_first'
@@ -32,6 +33,7 @@ def get_smell_dict():
         DURATION: None,
         NUMBER_COMP_FIRST_VARIATION: 0,
         NUMBER_COMP_LARGEST_VARIATION: 0,
+        NUMBER_COMP_SMALLEST_VARIATION: 0,
         NUMBER_COMP_LAST_VARIATION: 0,
         SHRINKING: 0,
         SHRINK_BELOW_FIRST: 0
@@ -70,6 +72,7 @@ def import_smell_trees(directory, name):
                 smells[smell_type][row['smell_id']][START] = row[BIRTH_DAY]
                 smells[smell_type][row['smell_id']][NUMBER_COMP_FIRST_VARIATION] = size_current_elements
                 smells[smell_type][row['smell_id']][NUMBER_COMP_LARGEST_VARIATION] = size_current_elements
+                smells[smell_type][row['smell_id']][NUMBER_COMP_SMALLEST_VARIATION] = size_current_elements
                 smells[smell_type][row['smell_id']][NUMBER_COMP_LAST_VARIATION] = size_current_elements
                 if row['split_point'] == 'split point':
                     smells[smell_type][row['smell_id']][SPLITTING] += 1
@@ -84,6 +87,8 @@ def import_smell_trees(directory, name):
                     smells[smell_type][row['smell_id']][NUMBER_COMP_LARGEST_VARIATION] = size_current_elements
                 if size_current_elements < smells[smell_type][row['smell_id']][NUMBER_COMP_FIRST_VARIATION]:
                     smells[smell_type][row['smell_id']][SHRINK_BELOW_FIRST] = 1
+                if size_current_elements < smells[smell_type][row['smell_id']][NUMBER_COMP_SMALLEST_VARIATION]:
+                    smells[smell_type][row['smell_id']][NUMBER_COMP_SMALLEST_VARIATION] = size_current_elements
                 if row['split_point'] == 'split point':
                     smells[smell_type][row['smell_id']][SPLITTING] += 1
                 else:
@@ -111,6 +116,7 @@ def write_smell_evolution(directory, name, smells_by_type):
                       DURATION,
                       NUMBER_COMP_FIRST_VARIATION,
                       NUMBER_COMP_LARGEST_VARIATION,
+                      NUMBER_COMP_SMALLEST_VARIATION,
                       NUMBER_COMP_LAST_VARIATION,
                       SHRINKING,
                       SHRINK_BELOW_FIRST]
@@ -129,6 +135,7 @@ def write_smell_evolution(directory, name, smells_by_type):
                     DURATION: get_month_duration(smell_evolution[END], smell_evolution[START]),
                     NUMBER_COMP_FIRST_VARIATION: smell_evolution[NUMBER_COMP_FIRST_VARIATION],
                     NUMBER_COMP_LARGEST_VARIATION: smell_evolution[NUMBER_COMP_LARGEST_VARIATION],
+                    NUMBER_COMP_SMALLEST_VARIATION: smell_evolution[NUMBER_COMP_SMALLEST_VARIATION],
                     NUMBER_COMP_LAST_VARIATION: smell_evolution[NUMBER_COMP_LAST_VARIATION],
                     SHRINKING: smell_evolution[SHRINKING],
                     SHRINK_BELOW_FIRST: smell_evolution[SHRINK_BELOW_FIRST]

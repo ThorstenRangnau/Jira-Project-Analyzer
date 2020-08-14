@@ -14,6 +14,10 @@ END = 'end'
 BIRTH_DAY = 'birth_date'
 DATE_FORMATTER_IMPORT = '%Y-%m-%d %H:%M:%S'
 DURATION = 'duration'
+NUMBER_COMP_FIRST_VARIATION = 'number_comp_first_var'
+NUMBER_COMP_LARGEST_VARIATION = 'number_comp_last_var'
+NUMBER_COMP_LAST_VARIATION = 'number_comp_last_var'
+SHRINKING = 'shrinking'
 
 
 def get_smell_dict():
@@ -23,7 +27,11 @@ def get_smell_dict():
         EXPANSION: 0,
         START: None,
         END: None,
-        DURATION: None
+        DURATION: None,
+        NUMBER_COMP_FIRST_VARIATION: 0,
+        NUMBER_COMP_LARGEST_VARIATION: 0,
+        NUMBER_COMP_LAST_VARIATION: 0,
+        SHRINKING: 0
     }
 
 

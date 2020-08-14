@@ -1,5 +1,6 @@
 import argparse
 import csv
+import re
 
 from datetime import datetime
 
@@ -15,9 +16,10 @@ BIRTH_DAY = 'birth_date'
 DATE_FORMATTER_IMPORT = '%Y-%m-%d %H:%M:%S'
 DURATION = 'duration'
 NUMBER_COMP_FIRST_VARIATION = 'number_comp_first_var'
-NUMBER_COMP_LARGEST_VARIATION = 'number_comp_last_var'
+NUMBER_COMP_LARGEST_VARIATION = 'number_comp_largest_var'
 NUMBER_COMP_LAST_VARIATION = 'number_comp_last_var'
 SHRINKING = 'shrinking'
+SHRINK_BELOW_FIRST = 'shrink_below_first'
 
 
 def get_smell_dict():
@@ -31,7 +33,8 @@ def get_smell_dict():
         NUMBER_COMP_FIRST_VARIATION: 0,
         NUMBER_COMP_LARGEST_VARIATION: 0,
         NUMBER_COMP_LAST_VARIATION: 0,
-        SHRINKING: 0
+        SHRINKING: 0,
+        SHRINK_BELOW_FIRST: 0
     }
 
 
@@ -43,7 +46,10 @@ def import_smell_trees(directory, name):
     }
     with open('%s/%s_smell_tree.csv' % (directory, name), mode="r") as csv_file:
         smell_type = 'No Type selected!!!!'
+        idx = 0
         for row in csv.DictReader(csv_file, delimiter=';'):
+            # print('Row %d' % idx)
+            idx += 1
             if row['smell_id'] == CYCLIC_DEPENDENCY:
                 smell_type = CYCLIC_DEPENDENCY
                 continue
@@ -53,16 +59,31 @@ def import_smell_trees(directory, name):
             if row['smell_id'] == HUBLIKE_DEPENDENCY:
                 smell_type = HUBLIKE_DEPENDENCY
                 continue
+            # print(row['smell_id'])
+            # print(row['components'])
+            # print(type(row['components']))
+            current_elements = re.findall("\'(.*?)\'", str(row['components']))
+            size_current_elements = len(current_elements)
             if row['root'] == 'Root':
                 smells[smell_type][row['smell_id']] = get_smell_dict()
                 smells[smell_type][row['smell_id']][SMELL_VARIATIONS] += 1
                 smells[smell_type][row['smell_id']][START] = row[BIRTH_DAY]
+                smells[smell_type][row['smell_id']][NUMBER_COMP_FIRST_VARIATION] = size_current_elements
+                smells[smell_type][row['smell_id']][NUMBER_COMP_LARGEST_VARIATION] = size_current_elements
+                smells[smell_type][row['smell_id']][NUMBER_COMP_LAST_VARIATION] = size_current_elements
                 if row['split_point'] == 'split point':
                     smells[smell_type][row['smell_id']][SPLITTING] += 1
                 continue
             if 'Smell-' in row['node_name']:
                 smells[smell_type][row['smell_id']][SMELL_VARIATIONS] += 1
                 smells[smell_type][row['smell_id']][END] = row[BIRTH_DAY]
+                if size_current_elements < smells[smell_type][row['smell_id']][NUMBER_COMP_LAST_VARIATION]:
+                    smells[smell_type][row['smell_id']][SHRINKING] = 1
+                smells[smell_type][row['smell_id']][NUMBER_COMP_LAST_VARIATION] = size_current_elements
+                if smells[smell_type][row['smell_id']][NUMBER_COMP_LARGEST_VARIATION] < size_current_elements:
+                    smells[smell_type][row['smell_id']][NUMBER_COMP_LARGEST_VARIATION] = size_current_elements
+                if size_current_elements < smells[smell_type][row['smell_id']][NUMBER_COMP_FIRST_VARIATION]:
+                    smells[smell_type][row['smell_id']][SHRINK_BELOW_FIRST] = 1
                 if row['split_point'] == 'split point':
                     smells[smell_type][row['smell_id']][SPLITTING] += 1
                 else:
@@ -87,7 +108,12 @@ def write_smell_evolution(directory, name, smells_by_type):
                       EXPANSION,
                       START,
                       END,
-                      DURATION]
+                      DURATION,
+                      NUMBER_COMP_FIRST_VARIATION,
+                      NUMBER_COMP_LARGEST_VARIATION,
+                      NUMBER_COMP_LAST_VARIATION,
+                      SHRINKING,
+                      SHRINK_BELOW_FIRST]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         for smell_type, smell_evolutions in smells_by_type.items():
@@ -100,7 +126,12 @@ def write_smell_evolution(directory, name, smells_by_type):
                     EXPANSION: smell_evolution[EXPANSION],
                     START: smell_evolution[START],
                     END: smell_evolution[END] if smell_evolution[END] is not None else smell_evolution[START],
-                    DURATION: get_month_duration(smell_evolution[END], smell_evolution[START])
+                    DURATION: get_month_duration(smell_evolution[END], smell_evolution[START]),
+                    NUMBER_COMP_FIRST_VARIATION: smell_evolution[NUMBER_COMP_FIRST_VARIATION],
+                    NUMBER_COMP_LARGEST_VARIATION: smell_evolution[NUMBER_COMP_LARGEST_VARIATION],
+                    NUMBER_COMP_LAST_VARIATION: smell_evolution[NUMBER_COMP_LAST_VARIATION],
+                    SHRINKING: smell_evolution[SHRINKING],
+                    SHRINK_BELOW_FIRST: smell_evolution[SHRINK_BELOW_FIRST]
                 })
 
 def parse_args():

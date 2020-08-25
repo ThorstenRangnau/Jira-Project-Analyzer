@@ -1,4 +1,4 @@
-# Jira-Project-Analyzer
+# Smell Tree Creator
 
 This project scans Git repositories and Jira Projects for a certain software system and determines whether both can be identified based on issue id.a
 
@@ -15,3 +15,7 @@ Pre-requirements: Python version 3.8 +
 3. Install requirements using pip: `pip install -r requirements.txt`
 
 4. Your machine is ready to parse a given project!
+
+
+# Jira-Project-Analyzer
+Here we will soon place the link where you can find the data and the results of our thesis.

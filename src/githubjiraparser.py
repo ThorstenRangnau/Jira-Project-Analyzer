@@ -142,7 +142,7 @@ def add_row_to_metrics_csv(name, jira_project_metric):
 
 def parse_apache_jira_projects():
     # jira = JIRA(APACHE_JIRA_SERVER)
-    jira = JIRA(APACHE_JIRA_SERVER, basic_auth=('ThorstenRangnau', 'IamStudying2019'))
+    jira = JIRA(APACHE_JIRA_SERVER, basic_auth=('Name', 'PW'))
     projects = jira.projects()
     java_projects = list()
     for p in projects:

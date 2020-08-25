@@ -245,7 +245,7 @@ def render_issue_information(issue, issue_key):
 
 
 def extract_issue_information(issue_keys, output_directory, prefix):
-    jira = JIRA(APACHE_JIRA_SERVER, basic_auth=('ThorstenRangnau', 'IamStudying2019'))
+    jira = JIRA(APACHE_JIRA_SERVER, basic_auth=('Name', 'PW'))
     with open('%s/issue_with_type_%s.csv' % (output_directory, prefix.casefold()), mode='w') as csv_file:
         fieldnames = [*get_issue_field_names()]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)

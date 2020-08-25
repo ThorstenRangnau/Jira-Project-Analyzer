@@ -64,7 +64,7 @@ def read_version_information(input_file, key):
 
 
 def fetch_issue_information(versions):
-    jira = JIRA(APACHE_JIRA_SERVER, basic_auth=('ThorstenRangnau', 'IamStudying2019'))
+    jira = JIRA(APACHE_JIRA_SERVER, basic_auth=('Name', 'PW'))
     for idx, version in enumerate(versions):
         if idx % 50 == 0:
             print("Parse version %d from total of %d" % (idx, len(versions)))

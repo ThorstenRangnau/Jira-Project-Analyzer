@@ -8,7 +8,7 @@ from jira import JIRA, JIRAError
 
 
 def parse_jira_for_commit_sha_in_comments():
-    jira = JIRA('https://issues.apache.org/jira/', basic_auth=('ThorstenRangnau', 'IamStudying2019'))
+    jira = JIRA('https://issues.apache.org/jira/', basic_auth=('Name', 'PW'))
     issue_list = jira.search_issues("id=\"MATH\"")
     issue = issue_list[0]
     issue

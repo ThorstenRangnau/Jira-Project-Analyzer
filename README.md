@@ -17,5 +17,5 @@ Pre-requirements: Python version 3.8 +
 4. Your machine is ready to parse a given project!
 
 
-# Jira-Project-Analyzer
-Here we will soon place the link where you can find the data and the results of our thesis.
+# Data
+Most of the results that we achieved during our study are stored n the HPC cluster. However, the issue information being used in the project selection can be find in the issue-mertics folder of this repository.

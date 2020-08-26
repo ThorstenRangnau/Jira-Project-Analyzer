@@ -93,12 +93,19 @@ Now we can fetch further issue information for every smell variation. This is do
 
 
 ### Step 4:
+The next step is to execute `duplicated_smell_finder.py`. The naming is a bit misleading but this script is where the most important magic of the smell tree creation happens. It first filteres all duplicated smell that have been detected by ASTracker and keeps the olderst of them. It then applies the algorithm for creating the smell tree as described in our literature. These steps include: mapping smells with the same two component names together, sorting them by age, aligning them to the corresponding tree. Afterwards the script spices every smell tree up with the github and jira information that were extracted and request in in steps 2 and 3. Finally, it writes all trees to csv. Furthermore, it creates a txt file for each tree.
 
 **Input:**
+-d location of `<project-name>_smells_by_version.csv` as input (determines also output directory)
+-n project name (used for filenames of output)
+-s (optional) start date of the smell analysis (may be handy to increase quality of findings since in many projects developers do not include the issue key in the commit message at the beginning of the life-time of that project)
 
 **Output:**
+- `<project-name>_smell_tree.csv` - csv with all smell tress. It indicates which smell variation is the root. I further shows - among other information - which smell variation is parent.
+- all smell trees each written in a txt file
 
 **Command:**
+`python duplicated_smell_filter.py <location-of-in-and-output> -n <project-name> (-s yyyy-mm-dd)`
 
 
 

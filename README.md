@@ -1,6 +1,6 @@
 # Smell Tree Creator
 
-This project contains the python script that composes the smell tree creator. A tool that is used to find the first version of a smell that is incurred in a software version. The scripts that belong to the smell tree creator are: **smell_extraction.py, duplicated_smell_filter.py, smell_tree_aggregation.py, smell_metric_counting.py, and developer_aggregation.py**. In this documentation we describe the detup of the runtime environment, the prerequirements to use the smell tree creator, how to create the smell trees, and what further information can be derrived by the smell creator.
+This project contains the python script that composes the smell tree creator. A tool that is used to find the first version of a smell that is incurred in a software version. The scripts that belong to the smell tree creator are: **smell_extraction.py, duplicated_smell_filter.py, smell_tree_aggregation.py, smell_metric_counting.py, and developer_aggregation.py**. In this documentation we describe the setup of the runtime environment, the pre-requirements to use the smell tree creator, how to create the smell trees, and what further information can be derived by the smell creator.
 
 ## Setup
 
@@ -16,11 +16,11 @@ Pre-requirements: Python version 3.8 +
 
 4. Your machine is ready for the smell tree creator!
 
-## Prerequirements
-Smell tree creator uses the output of the Arcan/ASTracker analysis. You need of course to analyse a given Java project by these tools. Please be aware that the project under question needs to be managed by Git. For further information for the project selection, we refer here to our work "Determining the rationale of architectural smells from issue trackers". Besides the ASTracker output, smell tree creator requires also information from jira and gihub.
+## Pre-requirements
+Smell tree creator uses the output of the Arcan/ASTracker analysis. You need of course to analyse a given Java project by these tools. Please be aware that the project under question needs to be managed by Git. For further information for the project selection, we refer here to our work "Determining the rationale of architectural smells from issue trackers". Besides the ASTracker output, smell tree creator requires also information from jira and github.
 
 ### 1. Arcan execution
-The execution of Arcan is described in the arcan execution scripts that we used to execute the analysis of all versions on the HPC cluster of RUG. You can find the scripts in the scripts folder of this repository. We can only describe what we did in our work to execute the smell detection of Arcan. This here is no official documentation of the Arcan tool. If you look for further information of Arcan we politely ask you to look at the official documentation of [Arcan](https://gitlab.com/essere.lab.public/arcan).
+The execution of Arcan is described in the Arcan execution scripts that we used to execute the analysis of all versions on the HPC cluster of RUG. You can find the scripts in the scripts folder of this repository. We can only describe what we did in our work to execute the smell detection of Arcan. This here is no official documentation of the Arcan tool. If you look for further information of Arcan we politely ask you to look at the official documentation of [Arcan](https://gitlab.com/essere.lab.public/arcan).
 
 Basic steps:
 1. clone git project
@@ -35,30 +35,30 @@ We found that Arcan version not belonging to the branch that is indicated in the
 `masterBranchCommitFinder.sh <location-of-git-project> <location-of-arcan-files> <location-of-output-dir> <branch-name-to-analyse>`
 
 ### 3. Find Arcan Gaps
-Arcan also skips several versions. Smell tree creator hence requires a list of gaps in order to indicate if the version of a smell root is found after a gap. This way one can manually varify whether the version in which the smell root is incurred is correct. You can create a gap csv that is then used in the smell tree creator by appying the gitGapFinder.sh script (in third-party-application folder):
+Arcan also skips several versions. Smell tree creator hence requires a list of gaps in order to indicate if the version of a smell root is found after a gap. This way one can manually verify whether the version in which the smell root is incurred is correct. You can create a gap csv that is then used in the smell tree creator by applying the gitGapFinder.sh script (in third-party-application folder):
 `gitGapFinder.sh <location-of-git-project> <location-of-arcan-files> /path/to/output/dir/<project-name>_gaps.csv`
 
-Please doublecheck the csv file. It is esential to add a header with column names: `commit;previous_commits;gap` (please check what kind of default separation your os provides for csv separation). Further one may need to add the last two columns o the first data row: `;0;0`
+Please double check the csv file. It is essential to add a header with column names: `commit;previous_commits;gap` (please check what kind of default separation your os provides for csv separation). Further one may need to add the last two columns o the first data row: `;0;0`
 
 
 ### 4. ASTracker execution
-The execution of ASTracker is described in the astracer execution scripts that we used to execute the analysis of all versions on the HPC cluster of RUG. You can find the scripts in the scripts folder of this repository. We can only describe what we did in our work to execute the smell detection of ASTracker. This here is no official documentation of the ASTracker tool. If you look for further information of Arcan we politely ask you to look at the official documentation of [ASTracker](https://github.com/darius-sas/astracker).
+The execution of ASTracker is described in the ASTracker execution scripts that we used to execute the analysis of all versions on the HPC cluster of RUG. You can find the scripts in the scripts folder of this repository. We can only describe what we did in our work to execute the smell detection of ASTracker. This here is no official documentation of the ASTracker tool. If you look for further information of Arcan we politely ask you to look at the official documentation of [ASTracker](https://github.com/darius-sas/astracker).
 Basic steps:
 
 ## Smell Tree Creator execution
 
-The smell tree creator is composed by several python scripts. This is because execution can be extensive, especially since some of them request data from onlie sources. Therefore, splitting the general process into several sub-steps allows to store results after each step. This is handy, in case the execution for another step fails. Then one does not need to run the entire pipeline but can start at the last successful step again.
+The smell tree creator is composed by several python scripts. This is because execution can be extensive, especially since some of them request data from online sources. Therefore, splitting the general process into several sub-steps allows to store results after each step. This is handy, in case the execution for another step fails. Then one does not need to run the entire pipeline but can start at the last successful step again.
 
 ### Step 1:
-The first step of executing the smell tree creator is to run `smell_extraction.py`. This script uses the output of ASTracker and searches for all smells that ASTracker found as the first version of a smell. These smells, toghether with crucial information about each smell, will be stored to disc in a csv file. It also includes the commit sha of the versions in which a smell is incurred.
+The first step of executing the smell tree creator is to run `smell_extraction.py`. This script uses the output of ASTracker and searches for all smells that ASTracker found as the first version of a smell. These smells, together with crucial information about each smell, will be stored to disc in a csv file. It also includes the commit sha of the versions in which a smell is incurred.
 
 **Input:** 
 -d  location of `smell-characteristics-consecOnly.csv` file (output of ASTracker), 
--n  project name (used for filenames of input/output)
+-n  project name (used for file-names of input/output)
 
 **Output:**
 -  `<project-name>_smells_by_version.csv` - csv file with the smells that ASTracker marked as first incurred version of that smell (aka smell variation)
--  `<project-name>_smells_aggregated_by_version.csv` - csv file with an overview on how many smells have been detected in a particulat version (only informative character but not required for further exectuion)
+-  `<project-name>_smells_aggregated_by_version.csv` - csv file with an overview on how many smells have been detected in a particular version (only informative character but not required for further execution)
 
 **Command:**
 `python smell_extration.py -d <location-of-in-and-output> -n <project-name>`
@@ -71,7 +71,7 @@ Now we need to extract the issue keys from the commit message. This is done by t
 -g `<github>/<repository-name>` - name of the GitHub repository, e.g. apache/phoenix
 -k `JIRAKEY` - Jira issue key, e.g. AMQ for ActiveMQ
 -o `/path/to/output/dir/`
--n project name (used for filenames of input/output)
+-n project name (used for file-names of input/output)
 **Output:**
 - `<project-name>_commit_information-<number>-percent.csv` - csv file with git commit information including Issue Key, indicates also coverage of extracted issue keys
 **Command:**
@@ -79,13 +79,13 @@ Now we need to extract the issue keys from the commit message. This is done by t
 
 
 ### Step 3:
-Now we can fetch further issue information for every smell variation. This is done by `issue_fetcher.py`. Please note that you need to add an Jira account name and password in this script (line 67). There is also a general rate limit for requests using the Jira API. Please make yourself aware that the scrip does not exeed this rate limit.
+Now we can fetch further issue information for every smell variation. This is done by `issue_fetcher.py`. Please note that you need to add an Jira account name and password in this script (line 67). There is also a general rate limit for requests using the Jira API. Please make yourself aware that the scrip does not exceed this rate limit.
 
 **Input:**
 -i `/path/to/dir/<project-name>_commit_information-<number>-percent.csv` - csv file with extracted issue keys
 -k `JIRAKEY` - Jira issue key, e.g. AMQ for ActiveMQ
 -o `/path/to/output/dir/`
--n project name (used for filenames of input/output)
+-n project name (used for file-names of input/output)
 **Output:**
 - `<project-name>_issue_information.csv` - csv file with commit sha, issue key, issue information (e.g. issue type, priority, etc.)
 
@@ -95,11 +95,11 @@ Now we can fetch further issue information for every smell variation. This is do
 
 
 ### Step 4:
-The next step is to execute `duplicated_smell_finder.py`. The naming is a bit misleading but this script is where the most important magic of the smell tree creation happens. It first filteres all duplicated smell that have been detected by ASTracker and keeps the olderst of them. It then applies the algorithm for creating the smell tree as described in our literature. These steps include: mapping smells with the same two component names together, sorting them by age, aligning them to the corresponding tree. Afterwards the script spices every smell tree up with the github and jira information that were extracted and request in in steps 2 and 3. Finally, it writes all trees to csv. Furthermore, it creates a txt file for each tree.
+The next step is to execute `duplicated_smell_finder.py`. The naming is a bit misleading but this script is where the most important magic of the smell tree creation happens. It first filters all duplicated smell that have been detected by ASTracker and keeps the oldest of them. It then applies the algorithm for creating the smell tree as described in our literature. These steps include: mapping smells with the same two component names together, sorting them by age, aligning them to the corresponding tree. Afterwards the script spices every smell tree up with the github and jira information that were extracted and request in in steps 2 and 3. Finally, it writes all trees to csv. Furthermore, it creates a txt file for each tree.
 
 **Input:**
 -d location of `<project-name>_smells_by_version.csv` as input (determines also output directory), in this folder you need to also have the `<project-name>_issue_information.csv`(Step 3) and `<project-name>_gaps.csv`(see Pre-requirements Step 3)
--n project name (used for filenames of input/output)
+-n project name (used for file-names of input/output)
 -s (optional) start date of the smell analysis (may be handy to increase quality of findings since in many projects developers do not include the issue key in the commit message at the beginning of the life-time of that project)
 
 **Output:**
@@ -122,7 +122,7 @@ In order to see metrics for the evolution of the smell trees of a projects apply
 -n  project name (used for filenames of input/output)
 
 **Output:**
-- `<project-name>_smell_evolution.csv` - csv file with metrics for each smell tree e.g. number of smell variations, number of splitting points, shrinking behavior, duration of evoluion etc.
+- `<project-name>_smell_evolution.csv` - csv file with metrics for each smell tree e.g. number of smell variations, number of splitting points, shrinking behavior, duration of evolution etc.
 
 **Command:**
 `python smell_metrics_counting.py -d <location-of-in-and-output> -n <project-name>`
@@ -132,7 +132,7 @@ This aggregates the information for issue type and priority using the `smell_tre
 
 **Input:** 
 -d  location of `<project-name>_smell_tree.csv`, 
--n  project name (used for filenames of input/output)
+-n  project name (used for file-names of input/output)
 
 **Output:**
 - `<project-name>_aggregated_issue_information_roots.csv` - 
@@ -145,7 +145,7 @@ This requests and aggregates information for the developers via `developer_aggre
 
 **Input:** 
 -d  location of `<project-name>_smell_tree.csv`, 
--n  project name (used for filenames of input/output)
+-n  project name (used for file-names of input/output)
 -g  `<github>/<repository-name>` - name of the GitHub repository, e.g. apache/phoenix
 
 **Output:**
@@ -155,7 +155,7 @@ This requests and aggregates information for the developers via `developer_aggre
 **Command:**
 `python developer_aggregation.py -d <location-of-in-and-output> -n <project-name> -g <github>/<repository-name>`
 
-Please keep in mind that in order to aggreage the developer information successfully, one has to verify these findings manually. We found for example that some developers use multiple accounts to work on the very same project. We combined the information in case we determined that one developer uses multiple accounts. In order to answer our research questions we manually added information on e.g. number of commits for a developer etc.
+Please keep in mind that in order to aggregate the developer information successfully, one has to verify these findings manually. We found for example that some developers use multiple accounts to work on the very same project. We combined the information in case we determined that one developer uses multiple accounts. In order to answer our research questions we manually added information on e.g. number of commits for a developer etc.
 
 # Data
-Most of the results that we achieved during our study are stored n the HPC cluster. However, the issue information being used in the project selection can be find in the issue-mertics folder of this repository.
+Most of the results that we achieved during our study are stored n the HPC cluster. However, the issue information being used in the project selection can be find in the issue-metrics folder of this repository.

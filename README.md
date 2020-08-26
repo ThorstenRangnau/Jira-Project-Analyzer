@@ -51,15 +51,64 @@ Basic steps:
 The first step of executing the smell tree creator is to run `smell_extraction.py`. This script uses the output of ASTracker and searches for all smells that ASTracker found as the first version of a smell. These smells, toghether with crucial information about each smell, will be stored to disc in a csv file. It also includes the commit sha of the versions in which a smell is incurred.
 
 **Input:** 
--  location of `smell-characteristics-consecOnly.csv` file (output of ASTracker), 
--  project name (used for filenames of output)
+-d  location of `smell-characteristics-consecOnly.csv` file (output of ASTracker), 
+-n  project name (used for filenames of output)
 
 **Output:**
--  `<project-name>_smells_by_version.csv` - csv file with the smells that ASTracker marked as first incurred version of that smell
+-  `<project-name>_smells_by_version.csv` - csv file with the smells that ASTracker marked as first incurred version of that smell (aka smell variation)
 -  `<project-name>_smells_aggregated_by_version.csv` - csv file with an overview on how many smells have been detected in a particulat version (only informative character but not required for further exectuion)
 
 **Command:**
 `python smell_extration.py -d <location-of-in-and-output> -n <project-name>`
+
+### Step 2:
+Now we need to extract the issue keys from the commit message. This is done by the `commit_fetcher.py`. This script will automatically extract - if included - the jira issue key from the commit messages. Please note that you need to provide minimum one personal github access key. You can create one for your GitHub account as explained [here](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). Please note that the GitHub API has a rate limit from 4000 requests per hour. If you work in a team you can add a list of multiple access keys. We provide an internal github service that automatically requests commit information and switches account if the requests exceeds the rate limits. You need to add the list of access keys to the `github_access_keys.py` in src/github_service/. Now you are ready to execute the scripts.
+
+**Input:**
+-i `/path/to/dir/<project-name>_smells_by_version.csv` - location of smells_by_version.csv
+-g `<github>/<repository-name>` - name of the GitHub repository, e.g. apache/phoenix
+-k `JIRAKEY` - Jira issue key, e.g. AMQ for ActiveMQ
+-o `/path/to/output/dir/`
+-n project name (used for filenames of output)
+**Output:**
+- `<project-name>_commit_information-<number>-percent.csv` - csv file with git commit information including Issue Key, indicates also coverage of extracted issue keys
+**Command:**
+`python commit_fetcher.py -i /path/to/dir/<project-name>_smells_by_version.csv -g <github>/<repository-name> -k JIRAKEY -o /path/to/output/dir/ -n <project-name>`
+
+
+### Step 3:
+Now we can fetch further issue information for every smell variation. This is done by `issue_fetcher.py`. Please note that you need to add an Jira account name and password in this script (line 67). There is also a general rate limit for requests using the Jira API. Please make yourself aware that the scrip does not exeed this rate limit.
+
+**Input:**
+-i `/path/to/dir/<project-name>_commit_information-<number>-percent.csv` - csv file with extracted issue keys
+-k `JIRAKEY` - Jira issue key, e.g. AMQ for ActiveMQ
+-o `/path/to/output/dir/`
+-n project name (used for filenames of output)
+**Output:**
+- `<project-name>_issue_information.csv` - csv file with commit sha, issue key, issue information (e.g. issue type, priority, etc.)
+
+
+**Command:**
+`python issue_fetcher.py -i /path/to/dir/<project-name>_commit_information-<number>-percent.csv -k JIRAKEY -o /Users/trangnau/RUG/master-thesis/results/activemq -n <project-name>`
+
+
+### Step 4:
+
+**Input:**
+
+**Output:**
+
+**Command:**
+
+
+
+### Step 5:
+
+**Input:**
+
+**Output:**
+
+**Command:**
 
 # Data
 Most of the results that we achieved during our study are stored n the HPC cluster. However, the issue information being used in the project selection can be find in the issue-mertics folder of this repository.
